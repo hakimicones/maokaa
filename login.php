@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Valider les données
         $errors = validateForm(
             ['username' => $username, 'password' => $password],
-            ['username' => 'required|min:3', 'password' => 'required|min:6']
+            ['username' => 'required|min:2', 'password' => 'required|min:6']
         );
         
         if (empty($errors)) {
@@ -151,7 +151,7 @@ $csrfToken = generateCSRFToken();
             <?php endif; ?>
 
             <form method="POST" action="">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
                 <div class="form-group">
                     <label for="username" class="form-label" style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Nom d'utilisateur</label>

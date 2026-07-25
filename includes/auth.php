@@ -3,6 +3,16 @@
 // Gestion des sessions et authentification admin
 
 if (session_status() === PHP_SESSION_NONE) {
+    $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                || (!empty($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443);
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path'     => '/',
+        'domain'   => '',
+        'secure'   => $isSecure,
+        'httponly'  => true,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 
@@ -48,13 +58,36 @@ function requirePasswordChange() {
 }
 
 /**
+ * Vérifie que l'utilisateur a le rôle requis (ou est admin).
+ * admin a tous les droits. editor a un accès limité.
+ */
+function requireRole(string $role): void {
+    requireLogin();
+    $currentRole = $_SESSION['admin_role'] ?? 'admin';
+    $allowed = ($role === 'admin') ? ['admin'] : ['admin', $role];
+    if (!in_array($currentRole, $allowed, true)) {
+        http_response_code(403);
+        echo 'Accès interdit.';
+        exit;
+    }
+}
+
+/**
+ * Vérifie si l'utilisateur connecté a un rôle donné.
+ */
+function hasRole(string $role): bool {
+    $currentRole = $_SESSION['admin_role'] ?? 'admin';
+    return $currentRole === $role || $currentRole === 'admin';
+}
+
+/**
  * Connexion utilisateur
  */
 function login($username, $password) {
     global $pdo;
     
     try {
-        $stmt = $pdo->prepare("SELECT id, username, password_hash, fullname FROM admins WHERE username = ? AND active = 1");
+        $stmt = $pdo->prepare("SELECT id, username, password_hash, fullname, must_change_password, role FROM admins WHERE username = ? AND active = 1");
         $stmt->execute([$username]);
         $admin = $stmt->fetch();
 
@@ -63,7 +96,8 @@ function login($username, $password) {
             $_SESSION['admin_id'] = $admin['id'];
             $_SESSION['admin_username'] = $admin['username'];
             $_SESSION['admin_fullname'] = $admin['fullname'];
-            setPasswordChangeRequired(password_verify('admin123', $admin['password_hash']));
+            $_SESSION['admin_role'] = $admin['role'];
+            setPasswordChangeRequired(!empty($admin['must_change_password']));
             clearFailedLogins();
             return true;
         }
@@ -218,14 +252,86 @@ function clearFailedLogins(): void {
 }
 
 /**
- * Supprime les vecteurs XSS évidents d'un contenu HTML CMS.
- * Ne remplace pas HTMLPurifier mais élimine les cas critiques.
+ * Supprime les vecteurs XSS d'un contenu HTML CMS.
+ * Utilise DOMDocument pour une sanitisation fiable (pas de regex).
+ * Autorise les balises courantes (p, h1-h6, strong, em, a, img, ul, ol, li, table, etc.)
+ * Supprime les scripts, iframes, forms, event handlers, javascript: URLs.
  */
 function sanitize_body_html(string $html): string {
-    $html = preg_replace('/<script\b[^>]*>[\s\S]*?<\/script>/i', '', $html);
-    $html = preg_replace('/\s+on\w+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]*)/i', '', $html);
-    $html = preg_replace('/(?:href|src|action)\s*=\s*["\']?\s*javascript:[^"\'>\s]*/i', 'href="#"', $html);
-    return $html;
+    if (trim($html) === '') return '';
+
+    $allowedTags = [
+        'p','br','b','strong','i','em','u','s','sub','sup',
+        'h1','h2','h3','h4','h5','h6',
+        'a','img','figure','figcaption',
+        'ul','ol','li',
+        'table','thead','tbody','tr','th','td',
+        'blockquote','pre','code',
+        'div','span','section','article',
+        'hr','abbr','small','mark',
+    ];
+    $allowedAttributes = [
+        'href','src','alt','title','width','height','class','id','style',
+        'target','rel','colspan','rowspan','scope','align','valign',
+    ];
+
+    libxml_use_internal_errors(true);
+    $doc = new DOMDocument();
+    $doc->loadHTML('<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>' . $html . '</body></html>', LIBXML_HTML_NODEFDTD);
+    libxml_clear_errors();
+
+    $body = $doc->getElementsByTagName('body')->item(0);
+    if (!$body) return '';
+
+    $toRemove = [];
+
+    foreach ($body->getElementsByTagName('*') as $node) {
+        if ($node->nodeType !== XML_ELEMENT_NODE) continue;
+        $tag = strtolower($node->tagName);
+
+        if (in_array($tag, ['script','style','iframe','object','embed','applet','form','input','textarea','select','button','link','meta','head'], true)) {
+            $toRemove[] = $node;
+            continue;
+        }
+
+        if (!in_array($tag, $allowedTags, true)) {
+            while ($node->firstChild) {
+                $node->parentNode->insertBefore($node->firstChild, $node);
+            }
+            $toRemove[] = $node;
+            continue;
+        }
+
+        foreach ($node->attributes as $attr) {
+            $name = strtolower($attr->name);
+            $keep = in_array($name, $allowedAttributes, true) || str_starts_with($name, 'data-');
+            if (!$keep || preg_match('/^on/i', $name)) {
+                $node->removeAttributeNode($attr);
+            }
+        }
+
+        foreach (['href','src','action'] as $urlAttr) {
+            if ($node->hasAttribute($urlAttr) && preg_match('/^\s*javascript\s*:/i', $node->getAttribute($urlAttr))) {
+                $node->removeAttribute($urlAttr);
+            }
+        }
+
+        if ($node->hasAttribute('style') && preg_match('/expression\s*\(|url\s*\(\s*["\']?\s*javascript:/i', $node->getAttribute('style'))) {
+            $node->removeAttribute('style');
+        }
+    }
+
+    foreach ($toRemove as $node) {
+        if ($node->parentNode) $node->parentNode->removeChild($node);
+    }
+
+    $result = '';
+    foreach ($body->childNodes as $child) {
+        if ($child->nodeType === XML_ELEMENT_NODE || $child->nodeType === XML_TEXT_NODE) {
+            $result .= $doc->saveHTML($child);
+        }
+    }
+    return trim($result);
 }
 
 /**

@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/theme.php';
 
 requirePasswordChange();
+requireRole('admin');
 
 ThemeManager::init($pdo);
 $themes  = ThemeManager::list();

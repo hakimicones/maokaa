@@ -8,6 +8,7 @@ require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/auth.php';
 
 requirePasswordChange();
+requireRole('admin');
 
 $dryRun = !isset($_GET['run']);
 

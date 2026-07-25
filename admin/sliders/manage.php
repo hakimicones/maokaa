@@ -36,7 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $csrfToken = generateCSRFToken();
-$retParam  = !empty($_GET['return_url']) ? '&return_url=' . urlencode($_GET['return_url']) : '';
+$retUrl    = $_GET['return_url'] ?? '';
+$retParam  = (!empty($retUrl) && is_safe_url($retUrl)) ? '&return_url=' . urlencode($retUrl) : '';
 $slides    = $sliderModel->getAllBySlider($slider_id);
 
 $flash = function_exists('getFlash') ? getFlash() : null;

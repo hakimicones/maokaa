@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../app/models/User.php';
 
 requirePasswordChange();
+requireRole('admin');
 
 $UserModel = new User($pdo);
 $UserId    = (int)($_GET['id'] ?? 0);

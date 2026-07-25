@@ -53,7 +53,7 @@
 </IfModule>
 
 # Prevent Access to Sensitive Files
-<FilesMatch "^(\.htaccess|\.env|config\.php|shema\.sql)$">
+<FilesMatch "^(\.htaccess|\.env|config\.php|db\.php|auth\.php|env\.php|upload\.php|captcha\.php|captcha-image\.php|settings_helpers\.php|ai_client\.php|shema\.sql)$">
     Order Deny,Allow
     Deny from all
 </FilesMatch>

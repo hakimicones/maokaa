@@ -105,6 +105,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     break;
  
     case 'delete_user':
+    if (!hasRole('admin')) {
+        setFlash('error', 'Accès interdit. Droits admin requis.');
+        break;
+    }
     if ($UserModel->delete((int)$_POST['id'])) {
         setFlash('success', 'Utilisateur supprimé avec succès');
         logAudit('delete_user', 'ID: ' . $_POST['id']);
@@ -518,11 +522,13 @@ $csrfToken = generateCSRFToken();
                 </a>
             </li>
 
+            <?php if (hasRole('admin')): ?>
             <li class="nav-item">
     <a href="?section=users" class="nav-link <?php echo $section === 'users' ? 'active' : ''; ?>">
         <i class="fas fa-users"></i> Utilisateurs
     </a>
 </li>
+<?php endif; ?>
 
 
             <li class="nav-item">
@@ -693,7 +699,7 @@ $csrfToken = generateCSRFToken();
                             <td>
                                 <a href="products/edit.php?id=<?php echo $product['id']; ?>" class="btn btn-sm btn-primary btn-action">Éditer</a>
                                 <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="action" value="delete_product">
                                     <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
                                     <button type="submit" class="btn btn-sm btn-danger btn-action" onclick="return confirm('Confirmer la suppression?')">Supprimer</button>
@@ -741,7 +747,7 @@ $csrfToken = generateCSRFToken();
                     <td>
                         <a href="categories/edit.php?id=<?php echo (int)$category['id']; ?>" class="btn btn-sm btn-primary btn-action">Éditer</a>
                         <form method="POST" style="display: inline;">
-                            <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                             <input type="hidden" name="action" value="delete_category">
                             <input type="hidden" name="id" value="<?php echo (int)$category['id']; ?>">
                             <button type="submit" 
@@ -816,8 +822,8 @@ $csrfToken = generateCSRFToken();
                             <small class="text-white opacity-75 d-block">
                                 <i class="fas fa-link me-1"></i><?php echo htmlspecialchars($page['slug']); ?>
                             </small>
-                        </div>
-                    </div>
+    </div>
+</div>
                 </div>
 
 <!-- FOOTER ACTIONS -->
@@ -833,7 +839,7 @@ $csrfToken = generateCSRFToken();
     </a>
     <!-- SUPPRESSION -->
     <form method="POST" style="display: inline; margin-left: auto;">
-        <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
         <input type="hidden" name="action" value="delete_content">
         <input type="hidden" name="id" value="<?php echo (int)$page['id']; ?>">
         <button type="submit" 
@@ -887,7 +893,7 @@ $csrfToken = generateCSRFToken();
                             <td>
                                 <a href="brands/edit.php?id=<?php echo $brand['id']; ?>" class="btn btn-sm btn-primary btn-action">Éditer</a>
                                 <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="action" value="delete_brand">
                                     <input type="hidden" name="id" value="<?php echo $brand['id']; ?>">
                                     <button type="submit" class="btn btn-sm btn-danger btn-action" onclick="return confirm('Confirmer la suppression?')">Supprimer</button>
@@ -934,7 +940,7 @@ $csrfToken = generateCSRFToken();
                             <td>
                                 <a href="partners/edit.php?id=<?php echo $partner['id']; ?>" class="btn btn-sm btn-primary btn-action">Éditer</a>
                                 <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="action" value="delete_partner">
                                     <input type="hidden" name="id" value="<?php echo $partner['id']; ?>">
                                     <button type="submit" class="btn btn-sm btn-danger btn-action" onclick="return confirm('Confirmer la suppression?')">Supprimer</button>
@@ -979,7 +985,7 @@ $csrfToken = generateCSRFToken();
                             <td>
                                 <a href="news/edit.php?id=<?php echo $item['id']; ?>" class="btn btn-sm btn-primary btn-action">Éditer</a>
                                 <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="action" value="delete_news">
                                     <input type="hidden" name="id" value="<?php echo $item['id']; ?>">
                                     <button type="submit" class="btn btn-sm btn-danger btn-action" onclick="return confirm('Confirmer la suppression?')">Supprimer</button>
@@ -1019,7 +1025,7 @@ $csrfToken = generateCSRFToken();
                             <td>
                                 <a href="messages/view.php?id=<?php echo $msg['id']; ?>" class="btn btn-sm btn-info btn-action">Voir</a>
                                 <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="action" value="delete_message">
                                     <input type="hidden" name="id" value="<?php echo $msg['id']; ?>">
                                     <button type="submit" class="btn btn-sm btn-danger btn-action" onclick="return confirm('Confirmer la suppression?')">Supprimer</button>
@@ -1035,6 +1041,7 @@ $csrfToken = generateCSRFToken();
 
 
     <!-- Users Section -->
+<?php if (hasRole('admin')): ?>
 <!-- Users Section -->
 <div class="content-section <?php echo $section === 'users' ? 'active' : ''; ?>" id="users">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -1080,7 +1087,7 @@ $csrfToken = generateCSRFToken();
                             <!-- Bouton Supprimer -->
     <form method="POST" style="display:inline;" 
           onsubmit="return confirm('Supprimer cet utilisateur ?');">
-        <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
         <input type="hidden" name="action" value="delete_user">
         <input type="hidden" name="id" value="<?php echo (int)$user['id']; ?>">
         <button type="submit" class="btn btn-sm btn-danger btn-action">
@@ -1094,6 +1101,7 @@ $csrfToken = generateCSRFToken();
         </table>
     </div>
 </div>
+<?php endif; ?>
 
     </div>
     

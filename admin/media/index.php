@@ -21,7 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'image/jpeg'    => 'jpg',
                     'image/png'     => 'png',
                     'image/gif'     => 'gif',
-                    'image/svg+xml' => 'svg',
                     'image/webp'    => 'webp',
                 ]);
                 if (isset($result['error'])) {

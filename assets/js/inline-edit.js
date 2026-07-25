@@ -18,10 +18,247 @@
     toolbar.innerHTML =
         '<i class="fas fa-pencil-alt ie-toolbar-icon"></i>' +
         '<span id="ie-toolbar-hint">Mode <strong>édition inline</strong> — cliquez sur un texte pour le modifier</span>' +
+        '<button id="ie-new-page-btn" class="ie-toolbar-btn ie-toolbar-btn-success">' +
+            '<i class="fas fa-plus"></i> Page' +
+        '</button>' +
         '<a href="' + baseUrl + 'admin/" id="ie-toolbar-admin">' +
             'Tableau de bord <i class="fas fa-external-link-alt"></i>' +
         '</a>';
     document.body.prepend(toolbar);
+
+    // ── Modal "Nouvelle page" ──────────────────────────────────────────────
+    var pageModal = document.createElement('div');
+    pageModal.id = 'ie-page-modal';
+    pageModal.innerHTML =
+        '<div class="ie-page-modal-overlay"></div>' +
+        '<div class="ie-page-modal-dialog">' +
+            '<div class="ie-page-modal-header">' +
+                '<h5><i class="fas fa-file-circle-plus"></i> Créer une nouvelle page</h5>' +
+                '<button type="button" class="ie-page-modal-close" id="ie-page-modal-close">&times;</button>' +
+            '</div>' +
+            '<form id="ie-page-form" autocomplete="off">' +
+                '<div class="ie-page-modal-body">' +
+                    '<div class="ie-form-row">' +
+                        '<label for="ie-page-title">Titre *</label>' +
+                        '<input type="text" id="ie-page-title" name="title" required maxlength="255" placeholder="Ex: Contactez-nous">' +
+                    '</div>' +
+                    '<div class="ie-form-row">' +
+                        '<label for="ie-page-slug">Slug</label>' +
+                        '<div class="ie-slug-input-wrap">' +
+                            '<span class="ie-slug-prefix">' + baseUrl + '</span>' +
+                            '<input type="text" id="ie-page-slug" name="slug" maxlength="191" placeholder="auto-généré du titre">' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="ie-form-row ie-form-row-half">' +
+                        '<div>' +
+                            '<label for="ie-page-template">Template</label>' +
+                            '<select id="ie-page-template" name="template"></select>' +
+                        '</div>' +
+                        '<div>' +
+                            '<label for="ie-page-status">Statut</label>' +
+                            '<select id="ie-page-status" name="status">' +
+                                '<option value="draft">Brouillon</option>' +
+                                '<option value="published">Publié</option>' +
+                            '</select>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="ie-form-divider"></div>' +
+                    '<div class="ie-form-row">' +
+                        '<label class="ie-checkbox-label">' +
+                            '<input type="checkbox" id="ie-page-add-menu" name="add_to_menu" value="1"> Ajouter au menu' +
+                        '</label>' +
+                    '</div>' +
+                    '<div id="ie-menu-options" class="ie-menu-options" style="display:none;">' +
+                        '<div class="ie-form-row ie-form-row-half">' +
+                            '<div>' +
+                                '<label for="ie-page-menu-name">Menu</label>' +
+                                '<select id="ie-page-menu-name" name="menu_name"></select>' +
+                            '</div>' +
+                            '<div>' +
+                                '<label for="ie-page-menu-parent">Sous-menu de</label>' +
+                                '<select id="ie-page-menu-parent" name="menu_parent_id">' +
+                                    '<option value="">Aucun (niveau racine)</option>' +
+                                '</select>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="ie-page-modal-footer">' +
+                    '<button type="button" class="ie-btn ie-btn-cancel" id="ie-page-modal-cancel">Annuler</button>' +
+                    '<button type="submit" class="ie-btn ie-btn-primary" id="ie-page-submit">' +
+                        '<i class="fas fa-check"></i> Créer la page' +
+                    '</button>' +
+                '</div>' +
+            '</form>' +
+        '</div>';
+    document.body.appendChild(pageModal);
+
+    // ── Variables DOM ──────────────────────────────────────────────────────
+    var modal         = document.getElementById('ie-page-modal');
+    var modalOverlay  = modal.querySelector('.ie-page-modal-overlay');
+    var form          = document.getElementById('ie-page-form');
+    var titleInput    = document.getElementById('ie-page-title');
+    var slugInput     = document.getElementById('ie-page-slug');
+    var templateSelect = document.getElementById('ie-page-template');
+    var statusSelect  = document.getElementById('ie-page-status');
+    var addMenuCheck  = document.getElementById('ie-page-add-menu');
+    var menuOptions   = document.getElementById('ie-menu-options');
+    var menuNameSel   = document.getElementById('ie-page-menu-name');
+    var menuParentSel = document.getElementById('ie-page-menu-parent');
+    var submitBtn     = document.getElementById('ie-page-submit');
+
+    // ── Templates disponibles (chargés en AJAX) ────────────────────────────
+    var templatesLoaded = false;
+    var menusLoaded = false;
+    var slugManuallyEdited = false;
+
+    function slugify(str) {
+        return str.toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9\-]/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+
+    function openModal() {
+        modal.classList.add('ie-page-modal-open');
+        document.body.style.overflow = 'hidden';
+        titleInput.focus();
+        if (!templatesLoaded) loadTemplates();
+        if (!menusLoaded) loadMenus();
+    }
+
+    function closeModal() {
+        modal.classList.remove('ie-page-modal-open');
+        document.body.style.overflow = '';
+        form.reset();
+        slugManuallyEdited = false;
+        menuOptions.style.display = 'none';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Créer la page';
+    }
+
+    function loadTemplates() {
+        fetch(baseUrl + 'themes/default/theme.json', { credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(json) {
+                var templates = json.templates || ['default'];
+                templateSelect.innerHTML = '';
+                templates.forEach(function(name) {
+                    var o = document.createElement('option');
+                    o.value = name;
+                    o.textContent = name;
+                    templateSelect.appendChild(o);
+                });
+                templatesLoaded = true;
+            })
+            .catch(function() {
+                templateSelect.innerHTML = '<option value="default">default</option>';
+                templatesLoaded = true;
+            });
+    }
+
+    function loadMenus() {
+        fetch(baseUrl + 'includes/api_menu_items.php?menu=main', { credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(items) {
+                menuNameSel.innerHTML = '<option value="main">Menu Principal</option>';
+                menuParentSel.innerHTML = '<option value="">Aucun (niveau racine)</option>';
+                items.forEach(function(item) {
+                    var o = document.createElement('option');
+                    o.value = item.id;
+                    o.textContent = item.title;
+                    menuParentSel.appendChild(o);
+                });
+                menusLoaded = true;
+            })
+            .catch(function() {
+                menusLoaded = true;
+            });
+    }
+
+    // ── Événements ─────────────────────────────────────────────────────────
+    document.getElementById('ie-new-page-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        openModal();
+    });
+
+    document.getElementById('ie-page-modal-close').addEventListener('click', closeModal);
+    document.getElementById('ie-page-modal-cancel').addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', closeModal);
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.classList.contains('ie-page-modal-open')) {
+            closeModal();
+        }
+    });
+
+    titleInput.addEventListener('input', function() {
+        if (!slugManuallyEdited) {
+            slugInput.value = slugify(titleInput.value);
+        }
+    });
+
+    slugInput.addEventListener('input', function() {
+        slugManuallyEdited = slugInput.value !== '';
+    });
+
+    addMenuCheck.addEventListener('change', function() {
+        menuOptions.style.display = addMenuCheck.checked ? 'block' : 'none';
+    });
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        var title = titleInput.value.trim();
+        if (!title) {
+            titleInput.focus();
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Création...';
+
+        var payload = {
+            csrf_token: csrfToken,
+            title: title,
+            slug: slugInput.value.trim(),
+            template: templateSelect.value,
+            status: statusSelect.value,
+            add_to_menu: addMenuCheck.checked ? 1 : 0,
+            menu_name: menuNameSel.value,
+            menu_parent_id: menuParentSel.value
+        };
+
+        fetch(baseUrl + 'includes/api_page_create.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(function(r) {
+            var ct = r.headers.get('content-type') || '';
+            if (!ct.includes('application/json')) {
+                throw new Error('Réponse non JSON (status ' + r.status + ')');
+            }
+            return r.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                window.location.href = data.edit_url;
+            } else {
+                alert(data.message || 'Erreur lors de la création');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> Créer la page';
+            }
+        })
+        .catch(function(err) {
+            console.error('Erreur création page:', err);
+            alert('Erreur lors de la création. Réessayez.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-check"></i> Créer la page';
+        });
+    });
 
     // ── Champs simples : title, subtitle ─────────────────────────────────
     document.querySelectorAll('[data-inline-field="title"], [data-inline-field="subtitle"]').forEach(function (el) {

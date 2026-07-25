@@ -145,7 +145,7 @@ $csrfToken = generateCSRFToken();
         
         <div class="form-card">
             <form method="POST" enctype="multipart/form-data" data-validate="true">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 
                 <!-- Informations Générales -->
                 <div class="form-section-title">Informations Générales</div>

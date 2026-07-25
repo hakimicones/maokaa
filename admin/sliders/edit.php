@@ -79,7 +79,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-$retParam  = !empty($_GET['return_url']) ? '&return_url=' . urlencode($_GET['return_url']) : '';
+$retUrl    = $_GET['return_url'] ?? '';
+$retParam  = (!empty($retUrl) && is_safe_url($retUrl)) ? '&return_url=' . urlencode($retUrl) : '';
 $csrfToken = generateCSRFToken();
 ?>
 <!DOCTYPE html>

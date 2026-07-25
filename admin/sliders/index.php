@@ -30,7 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $csrfToken = generateCSRFToken();
 $groups    = $sliderModel->getAllGroups();
-$retParam  = !empty($_GET['return_url']) ? '&return_url=' . urlencode($_GET['return_url']) : '';
+$retUrl    = $_GET['return_url'] ?? '';
+$retParam  = (!empty($retUrl) && is_safe_url($retUrl)) ? '&return_url=' . urlencode($retUrl) : '';
 
 $flash = function_exists('getFlash') ? getFlash() : null;
 ?>
@@ -77,7 +78,7 @@ $flash = function_exists('getFlash') ? getFlash() : null;
     <?php endif; ?>
 
     <a href="<?php echo BASE_URL; ?>admin/dashboard.php" class="btn btn-outline-secondary mb-3">&larr; Tableau de bord</a>
-    <?php if (!empty($_GET['return_url'])): ?>
+    <?php if (!empty($_GET['return_url']) && is_safe_url($_GET['return_url'])): ?>
         <a href="<?php echo htmlspecialchars($_GET['return_url']); ?>" class="btn btn-outline-secondary mb-3">&larr; Retour au site</a>
     <?php endif; ?>
 

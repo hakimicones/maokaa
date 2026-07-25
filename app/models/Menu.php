@@ -16,10 +16,11 @@ class Menu {
         return $stmt->fetch();
     }
 
-    public function getItems($menuId, $parentId = null) {
+    public function getItems($menuId, $parentId = null, bool $onlyActive = true) {
         $sql = "SELECT * FROM {$this->itemsTable}
                 WHERE menu_id = ?  
-                AND parent_id " . ($parentId === null ? "IS NULL" : "= ?") . "
+                AND parent_id " . ($parentId === null ? "IS NULL" : "= ?")
+                . ($onlyActive ? " AND active = 1" : "") . "
                 ORDER BY position ASC";
 
         $stmt = $this->pdo->prepare($sql);
@@ -33,11 +34,11 @@ class Menu {
         return $stmt->fetchAll();
     }
 
-    public function getItemsWithChildren($menuId) {
-        $items = $this->getItems($menuId);
+    public function getItemsWithChildren($menuId, bool $onlyActive = true) {
+        $items = $this->getItems($menuId, null, $onlyActive);
 
         foreach ($items as &$item) {
-            $item['children'] = $this->getItems($menuId, $item['id']);
+            $item['children'] = $this->getItems($menuId, $item['id'], $onlyActive);
         }
 
         return $items;
@@ -55,6 +56,7 @@ class Menu {
             "INSERT INTO {$this->itemsTable} (menu_id, title, url, icon, position, parent_id, params, active)
              VALUES (?, ?, ?, ?, ?, ?, ?, 1)"
         );
+        $params = $params ?? '{}';
         return $stmt->execute([$menuId, $title, $url, $icon, $position, $parentId, $params]);
     }
 

@@ -21,6 +21,9 @@ class ThemeManager
 
     public static function template(string $name): string
     {
+        $name = basename($name, '.php');
+        if ($name === '' || preg_match('/[^a-zA-Z0-9_\-]/', $name)) return '';
+
         foreach ([self::$active, 'default'] as $theme) {
             $f = self::$root . $theme . '/templates/' . $name . '.php';
             if (file_exists($f)) return $f;
@@ -73,6 +76,19 @@ class ThemeManager
             ]);
         }
         return $themes;
+    }
+
+    public static function getAvailableTemplates(): array
+    {
+        $templates = [];
+        foreach (glob(self::$root . '*/templates/*.php') ?: [] as $f) {
+            $name = basename($f, '.php');
+            if (!in_array($name, $templates, true)) {
+                $templates[] = $name;
+            }
+        }
+        sort($templates);
+        return $templates;
     }
 }
 

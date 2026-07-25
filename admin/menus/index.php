@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../app/models/Menu.php';
 
 requirePasswordChange();
+requireRole('admin');
 
 $menuModel = new Menu($pdo);
 $menus = $menuModel->getAllMenus();
@@ -24,7 +25,7 @@ if ($menuId > 0) {
 }
 
 if ($selectedMenu) {
-    $menuItems = $menuModel->getItemsWithChildren($selectedMenu['id']);
+    $menuItems = $menuModel->getItemsWithChildren($selectedMenu['id'], false);
 }
 
 // Traiter les actions POST
@@ -52,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 )) {
                     $message = 'Élément ajouté avec succès';
                     $messageType = 'success';
-                    $menuItems = $menuModel->getItemsWithChildren($selectedMenu['id']);
+                    $menuItems = $menuModel->getItemsWithChildren($selectedMenu['id'], false);
                 } else {
                     $message = 'Erreur lors de l\'ajout de l\'élément';
                     $messageType = 'danger';
@@ -71,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ])) {
                     $message = 'Élément mis à jour avec succès';
                     $messageType = 'success';
-                    $menuItems = $menuModel->getItemsWithChildren($selectedMenu['id']);
+                    $menuItems = $menuModel->getItemsWithChildren($selectedMenu['id'], false);
                 } else {
                     $message = 'Erreur lors de la mise à jour';
                     $messageType = 'danger';
@@ -82,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($menuModel->deleteItem((int)$_POST['id'])) {
                     $message = 'Élément supprimé avec succès';
                     $messageType = 'success';
-                    $menuItems = $menuModel->getItemsWithChildren($selectedMenu['id']);
+                    $menuItems = $menuModel->getItemsWithChildren($selectedMenu['id'], false);
                 } else {
                     $message = 'Erreur lors de la suppression';
                     $messageType = 'danger';

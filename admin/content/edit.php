@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/theme.php';
 require_once __DIR__ . '/../../app/models/Content.php';
 
 requirePasswordChange();
@@ -20,6 +21,8 @@ if (!$page) {
 $error = '';
 $successMessage = '';
 
+$availableTemplates = ThemeManager::getAvailableTemplates();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
         $error = 'Token de sécurité invalide';
@@ -31,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'meta_title' => trim($_POST['meta_title'] ?? ''),
             'meta_description' => trim($_POST['meta_description'] ?? ''),
             'body' => $page['body'] ?? '',
-            'template' => $_POST['template'] ?? 'default',
+            'template' => in_array($_POST['template'] ?? '', $availableTemplates, true) ? $_POST['template'] : 'default',
             'status' => $_POST['status'] ?? 'draft',
             'language' => $_POST['language'] ?? 'fr',
         ];
@@ -103,16 +106,7 @@ $csrfToken = generateCSRFToken();
             <div class="mb-3"><label class="form-label">Meta description</label><textarea name="meta_description" class="form-control" rows="3"><?php echo htmlspecialchars($page['meta_description'] ?? ''); ?></textarea></div>
             <div class="mb-3"><label class="form-label">Template</label>
                 <select name="template" class="form-select">
-                    <?php
-                    $themeDir = dirname(__DIR__, 2) . '/themes';
-                    $templates = [];
-                    foreach (glob($themeDir . '/*/templates/*.php') as $f) {
-                        $name = basename($f, '.php');
-                        if (!in_array($name, $templates)) $templates[] = $name;
-                    }
-                    sort($templates);
-                    foreach ($templates as $tpl):
-                    ?>
+                    <?php foreach ($availableTemplates as $tpl): ?>
                     <option value="<?php echo htmlspecialchars($tpl); ?>" <?php echo $page['template'] === $tpl ? 'selected' : ''; ?>><?php echo htmlspecialchars($tpl); ?></option>
                     <?php endforeach; ?>
                 </select>

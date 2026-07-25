@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif (password_verify($newPassword, $admin['password_hash'])) {
                 $error = 'Le nouveau mot de passe doit être différent de l\'ancien.';
             } else {
-                $update = $pdo->prepare('UPDATE admins SET password_hash = ?, updated_at = NOW() WHERE id = ?');
+                $update = $pdo->prepare('UPDATE admins SET password_hash = ?, must_change_password = 0, updated_at = NOW() WHERE id = ?');
                 if ($update->execute([password_hash($newPassword, PASSWORD_BCRYPT), $_SESSION['admin_id']])) {
                     setPasswordChangeRequired(false);
                     setFlash('success', 'Mot de passe mis à jour avec succès.');

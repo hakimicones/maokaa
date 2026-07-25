@@ -48,8 +48,8 @@ class User {
      */
     public function create($data) {
         $stmt = $this->pdo->prepare(
-            "INSERT INTO {$this->table} (username, password_hash, fullname, email, active) 
-             VALUES (?, ?, ?, ?, ?)"
+            "INSERT INTO {$this->table} (username, password_hash, fullname, email, active, must_change_password) 
+             VALUES (?, ?, ?, ?, ?, 1)"
         );
         return $stmt->execute([
             $data['username'],
@@ -67,7 +67,7 @@ class User {
         // Avec nouveau mot de passe
         if (!empty($data['password'])) {
             $stmt = $this->pdo->prepare(
-                "UPDATE {$this->table} SET username = ?, password_hash = ?, fullname = ?, email = ?, active = ?, updated_at = NOW() WHERE id = ?"
+                "UPDATE {$this->table} SET username = ?, password_hash = ?, fullname = ?, email = ?, active = ?, must_change_password = 1, updated_at = NOW() WHERE id = ?"
             );
             return $stmt->execute([
                 $data['username'],

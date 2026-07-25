@@ -3,12 +3,15 @@
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/theme.php';
 require_once __DIR__ . '/../../app/models/Content.php';
 
 requirePasswordChange();
 
 $model = new Content($pdo);
 $error = '';
+
+$availableTemplates = ThemeManager::getAvailableTemplates();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -20,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'subtitle' => trim($_POST['subtitle'] ?? ''),
             'meta_title' => trim($_POST['meta_title'] ?? ''),
             'meta_description' => trim($_POST['meta_description'] ?? ''),
-            'template' => $_POST['template'] ?? 'default',
+            'template' => in_array($_POST['template'] ?? '', $availableTemplates, true) ? $_POST['template'] : 'default',
             'status' => $_POST['status'] ?? 'draft',
             'language' => $_POST['language'] ?? 'fr',
         ];
@@ -75,7 +78,13 @@ $csrfToken = generateCSRFToken();
             <div class="mb-3"><label class="form-label">Sous-titre</label><input name="subtitle" class="form-control"></div>
             <div class="mb-3"><label class="form-label">Meta title</label><input name="meta_title" class="form-control"></div>
             <div class="mb-3"><label class="form-label">Meta description</label><textarea name="meta_description" class="form-control" rows="3"></textarea></div>
-            <div class="mb-3"><label class="form-label">Template</label><input name="template" class="form-control" value="default"></div>
+            <div class="mb-3"><label class="form-label">Template</label>
+                <select name="template" class="form-select">
+                    <?php foreach ($availableTemplates as $tpl): ?>
+                    <option value="<?php echo htmlspecialchars($tpl); ?>" <?php echo $tpl === 'default' ? 'selected' : ''; ?>><?php echo htmlspecialchars($tpl); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
             <div class="mb-3"><label class="form-label">Status</label>
                 <select name="status" class="form-select">
                     <option value="published">published</option>

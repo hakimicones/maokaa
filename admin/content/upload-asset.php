@@ -19,7 +19,6 @@ $result = upload_image($_FILES['file'] ?? [], $uploadDir, 'img', [
     'image/jpeg'    => 'jpg',
     'image/png'     => 'png',
     'image/gif'     => 'gif',
-    'image/svg+xml' => 'svg',
     'image/webp'    => 'webp',
 ]);
 
