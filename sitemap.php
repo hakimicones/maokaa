@@ -7,7 +7,9 @@ require_once __DIR__ . '/includes/db.php';
 header('Content-Type: application/xml; charset=utf-8');
 header('X-Robots-Tag: index, follow');
 
-$baseUrl = rtrim(BASE_URL, '/');
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$baseUrl = $protocol . '://' . $host . rtrim(BASE_URL, '/');
 $excludedSlugs = ['login', 'admin', '404'];
 
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
