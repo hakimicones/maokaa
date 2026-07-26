@@ -22,8 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'active'    => isset($_POST['active']) ? 1 : 0,
         ];
 
-        if (empty($data['username']) || empty($data['password'])) {
-            $error = 'Le nom d\'utilisateur et le mot de passe sont requis';
+        $errors = validateForm($data, [
+            'username' => 'required|min:2',
+            'password' => 'required|min:8',
+        ]);
+
+        if (!empty($errors)) {
+            $error = reset($errors);
         } else {
             if ($UserModel->create($data)) {
                 setFlash('success', 'Utilisateur créé avec succès');

@@ -64,3 +64,6 @@
 
 # Prevent Directory Listing
 Options -Indexes
+
+# Sitemap XML
+RewriteRule ^sitemap\.xml$ sitemap.php [L]

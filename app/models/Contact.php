@@ -13,7 +13,7 @@ class Contact {
         $sql = "SELECT * FROM {$this->table} ORDER BY created_at DESC";
         
         if ($limit) {
-            $sql .= " LIMIT {$limit} OFFSET {$offset}";
+            $sql .= " LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
         }
         
         return $this->pdo->query($sql)->fetchAll();

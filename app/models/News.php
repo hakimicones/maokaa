@@ -14,7 +14,7 @@ class News {
                 ORDER BY published_at DESC";
         
         if ($limit) {
-            $sql .= " LIMIT {$limit} OFFSET {$offset}";
+            $sql .= " LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
         }
         
         return $this->pdo->query($sql)->fetchAll();
@@ -30,7 +30,7 @@ class News {
 
     public function getRecent($limit = 6) {
         $sql = "SELECT * FROM {$this->table} WHERE status = 'published' 
-                ORDER BY published_at DESC LIMIT {$limit}";
+                ORDER BY published_at DESC LIMIT " . (int)$limit;
         
         return $this->pdo->query($sql)->fetchAll();
     }

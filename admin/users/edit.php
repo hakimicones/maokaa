@@ -35,8 +35,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data['password'] = trim($_POST['password']);
         }
 
-        if (empty($data['username'])) {
-            $error = 'Le nom d\'utilisateur est requis';
+        $errors = validateForm($data, [
+            'username' => 'required|min:2',
+        ]);
+
+        if (!empty($data['password']) && strlen($data['password']) < 8) {
+            $errors['password'] = 'Minimum 8 caractères requis.';
+        }
+
+        if (!empty($errors)) {
+            $error = reset($errors);
         } else {
             if ($UserModel->update($UserId, $data)) {
                 setFlash('success', 'Utilisateur mis à jour avec succès');
