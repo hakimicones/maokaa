@@ -6,6 +6,9 @@
     # NOTE: Pas de RewriteBase — la cible relative index.php fonctionne 
     # dans n'importe quel sous-répertoire (local XAMPP) comme à la racine (prod)
     
+    # Sitemap XML
+    RewriteRule ^sitemap\.xml$ sitemap.php [L]
+    
     # Don't rewrite real files or directories
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
@@ -64,6 +67,3 @@
 
 # Prevent Directory Listing
 Options -Indexes
-
-# Sitemap XML
-RewriteRule ^sitemap\.xml$ sitemap.php [L]
