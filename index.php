@@ -5,7 +5,11 @@ require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
 require_once 'includes/theme.php';
+require_once 'includes/modules.php';
 require_once 'app/models/Content.php';
+
+// Initialiser les modules
+ModuleRegistry::init($pdo);
 
 // Initialiser le gestionnaire de thème
 ThemeManager::init($pdo);

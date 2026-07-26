@@ -99,6 +99,27 @@ function render_shortcode(string $tag, array $atts, PDO $pdo): string
     if ($tag === 'products') {
         $limit = max(0, (int)($atts['limit'] ?? 0));
     }
+
+    // Vérification des modules activés
+    $moduleMap = [
+        'products'          => 'products',
+        'featured_products' => 'products',
+        'product_slider'    => 'products',
+        'news'              => 'news',
+        'brands'            => 'brands',
+        'brands_carousel'   => 'brands',
+        'partners'          => 'partners',
+        'carousel'          => 'sliders',
+        'splide_carousel'   => 'sliders',
+        'contact_form'      => 'messages',
+        'quote_form'        => 'messages',
+        'menu'              => 'menus',
+        'pages_list'        => 'pages',
+    ];
+    if (isset($moduleMap[$tag]) && function_exists('is_module_enabled') && !is_module_enabled($moduleMap[$tag])) {
+        return '';
+    }
+
     switch ($tag) {
         case 'products':          return render_block_products($pdo, $limit, $category, $title);
         case 'featured_products': return render_block_featured_products($pdo, $limit, $title);

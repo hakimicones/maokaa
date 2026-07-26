@@ -51,7 +51,7 @@ $csrfToken = generateCSRFToken();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modifier une catégorie - VEP Admin</title>
+    <title>Modifier une catégorie - Administrator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background: #f5f5f5; font-family: 'Segoe UI', sans-serif; }

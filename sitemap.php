@@ -3,6 +3,9 @@
 
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/modules.php';
+
+ModuleRegistry::init($pdo);
 
 header('Content-Type: application/xml; charset=utf-8');
 header('X-Robots-Tag: index, follow');
@@ -28,6 +31,7 @@ foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
 }
 
 // 2. Produits actifs
+if (is_module_enabled('products')) {
 $stmt = $pdo->query("SELECT id, updated_at, created_at FROM produits WHERE active = 1 ORDER BY id ASC");
 foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
     $lastmod = $row['updated_at'] ?: $row['created_at'];
@@ -37,8 +41,10 @@ foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
     echo '  <changefreq>monthly</changefreq>' . "\n";
     echo '</url>' . "\n";
 }
+}
 
 // 3. Actualités publiées
+if (is_module_enabled('news')) {
 $stmt = $pdo->query("SELECT id, published_at, updated_at, created_at FROM actualites WHERE status = 'published' ORDER BY published_at DESC");
 foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
     $lastmod = $row['updated_at'] ?: $row['published_at'] ?: $row['created_at'];
@@ -47,6 +53,7 @@ foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
     if ($lastmod) echo '  <lastmod>' . date('Y-m-d', strtotime($lastmod)) . '</lastmod>' . "\n";
     echo '  <changefreq>monthly</changefreq>' . "\n";
     echo '</url>' . "\n";
+}
 }
 
 echo '</urlset>' . "\n";
