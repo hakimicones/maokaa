@@ -21,8 +21,7 @@ $isAdmin = isLoggedIn();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="<?php echo BASE_URL; ?>assets/css/style.css" rel="stylesheet">
-    <link href="<?php echo BASE_URL; ?>assets/css/noor-guide.css" rel="stylesheet">
-    <link href="<?php echo theme_url('assets/css/theme.css'); ?>" rel="stylesheet">
+     <link href="<?php echo theme_url('assets/css/theme.css'); ?>" rel="stylesheet">
     <?php if ($isAdmin): ?>
     <link href="<?php echo BASE_URL; ?>assets/css/inline-edit.css" rel="stylesheet">
     <?php endif; ?>
@@ -35,8 +34,7 @@ $isAdmin = isLoggedIn();
     <?php theme_partial('footer'); ?>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?php echo BASE_URL; ?>assets/js/main.js"></script>
-    <script src="<?php echo BASE_URL; ?>assets/js/noor-guide.js"></script>
-    <?php if ($isAdmin): ?>
+       <?php if ($isAdmin): ?>
     <script src="<?php echo BASE_URL; ?>assets/js/inline-edit.js"></script>
     <?php endif; ?>
 </body>
