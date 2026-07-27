@@ -1,0 +1,7 @@
+{
+  "name": "Default",
+  "version": "1.0.0",
+  "description": "Thème par défaut de l'application",
+  "author": "Maokaa",
+  "templates": ["home", "default", "page", "listing", "products", "news"]
+}

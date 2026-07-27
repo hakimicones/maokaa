@@ -5,51 +5,52 @@ if (!function_exists('get_setting')) {
 }
 $footerAdmin = function_exists('isLoggedIn') && isLoggedIn();
 ?>
-<footer class="bg-dark text-white py-5 mt-5">
+<footer style="background:#0F0F1A; color:rgba(255,255,255,0.8); padding:4rem 0 0;">
     <div class="container">
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <h5 class="fw-bold mb-3">VEP</h5>
-                <p data-ie-setting="footer_description"><?php echo htmlspecialchars(get_setting($pdo, 'footer_description', 'Votre partenaire incontournable du laboratoire en Algérie. Importation et distribution de matériels et consommables de laboratoire depuis plus de 20 ans.')); ?></p>
-            </div>
-            <div class="col-md-3">
-                <h5 class="fw-bold mb-3">Navigation</h5>
-                <ul class="list-unstyled">
-                    <li><a href="<?php echo BASE_URL; ?>" class="text-white-50 text-decoration-none">Accueil</a></li>
-                    <li><a href="<?php echo BASE_URL; ?>about" class="text-white-50 text-decoration-none">À propos</a></li>
-                    <li><a href="<?php echo BASE_URL; ?>products" class="text-white-50 text-decoration-none">Produits</a></li>
-                    <li><a href="<?php echo BASE_URL; ?>contact" class="text-white-50 text-decoration-none">Contact</a></li>
-                </ul>
-            </div>
-            <div class="col-md-3">
-                <h5 class="fw-bold mb-3">Informations</h5>
-                <ul class="list-unstyled">
-                    <li><a href="tel:<?php echo htmlspecialchars(get_setting($pdo, 'footer_phone', '+213123456789')); ?>" class="text-white-50 text-decoration-none" data-ie-setting="footer_phone"><i class="fas fa-phone"></i> <?php echo htmlspecialchars(get_setting($pdo, 'footer_phone', '+213 (0) 123 456 789')); ?></a></li>
-                    <li><a href="mailto:<?php echo htmlspecialchars(get_setting($pdo, 'footer_email', 'contact@vep.dz')); ?>" class="text-white-50 text-decoration-none" data-ie-setting="footer_email"><i class="fas fa-envelope"></i> <?php echo htmlspecialchars(get_setting($pdo, 'footer_email', 'contact@vep.dz')); ?></a></li>
-                    <li class="text-white-50" data-ie-setting="footer_address"><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars(get_setting($pdo, 'footer_address', 'Alger, Algérie')); ?></li>
-                </ul>
-            </div>
-            <div class="col-md-3">
-                <h5 class="fw-bold mb-3">Réseaux Sociaux</h5>
-                <div class="d-flex gap-2">
-                    <a href="#" class="text-white-50 text-decoration-none"><i class="fab fa-facebook fs-5"></i></a>
-                    <a href="#" class="text-white-50 text-decoration-none"><i class="fab fa-twitter fs-5"></i></a>
-                    <a href="#" class="text-white-50 text-decoration-none"><i class="fab fa-linkedin fs-5"></i></a>
-                    <a href="#" class="text-white-50 text-decoration-none"><i class="fab fa-instagram fs-5"></i></a>
-                </div>
-            </div>
-        </div>
-        <hr class="bg-white-50">
-        <div class="row">
-            <div class="col-md-6">
-                <p class="text-white-50 small mb-0" data-ie-setting="footer_copyright">&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars(get_setting($pdo, 'footer_copyright', 'VEP - Tous droits réservés.')); ?></p>
-            </div>
-            <div class="col-md-6 text-md-end">
-                <p class="text-white-50 small mb-0">
-                    <a href="#" class="text-white-50 text-decoration-none">Conditions d'utilisation</a> |
-                    <a href="#" class="text-white-50 text-decoration-none">Politique de confidentialité</a>
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:3rem; padding-bottom:3rem; border-bottom:1px solid rgba(255,255,255,0.1);">
+            <div>
+                <a href="<?php echo BASE_URL; ?>" class="d-flex align-items-center gap-2 text-decoration-none mb-3" aria-label="Noor Guide — Retour à l'accueil" style="color:#fff; font-size:1.4rem; font-weight:700;">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded" style="width:40px;height:40px;background:#FF6B00;color:#fff;font-weight:900;font-size:1rem;border-radius:12px;">N</span>
+                    <span>Noor<span style="color:#FF6B00;">Guide</span></span>
+                </a>
+                <p data-ie-setting="footer_description" style="font-size:0.95rem; color:rgba(255,255,255,0.7); margin-top:0.75rem; line-height:1.7;">
+                    <?php echo htmlspecialchars(get_setting($pdo, 'footer_description', 'Application mobile de guidage pour personnes aveugles et malvoyantes. Navigation intelligente, parcours personnalisés et détection Bluetooth.')); ?>
                 </p>
             </div>
+            <div>
+                <h5 style="font-weight:700; font-size:1rem; letter-spacing:1px; text-transform:uppercase; color:#fff; margin-bottom:1.2rem;">Application</h5>
+                <ul style="list-style:none; padding:0;">
+                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>#features" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Fonctionnalités</a></li>
+                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>#how-it-works" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Comment ça marche</a></li>
+                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>#accessibility" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Accessibilité</a></li>
+                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>#contact" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Télécharger</a></li>
+                </ul>
+            </div>
+            <div>
+                <h5 style="font-weight:700; font-size:1rem; letter-spacing:1px; text-transform:uppercase; color:#fff; margin-bottom:1.2rem;">Ressources</h5>
+                <ul style="list-style:none; padding:0;">
+                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>documentation" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Documentation</a></li>
+                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>faq" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">FAQ</a></li>
+                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>blog" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Blog</a></li>
+                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>support" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Support</a></li>
+                </ul>
+            </div>
+            <div>
+                <h5 style="font-weight:700; font-size:1rem; letter-spacing:1px; text-transform:uppercase; color:#fff; margin-bottom:1.2rem;">Contact</h5>
+                <ul style="list-style:none; padding:0;">
+                    <li style="margin-bottom:0.6rem;"><a href="mailto:<?php echo htmlspecialchars(get_setting($pdo, 'footer_email', 'contact@noorguide.com')); ?>" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;" data-ie-setting="footer_email"><?php echo htmlspecialchars(get_setting($pdo, 'footer_email', 'contact@noorguide.com')); ?></a></li>
+                    <li style="margin-bottom:0.6rem;"><a href="tel:<?php echo htmlspecialchars(get_setting($pdo, 'footer_phone', '+33123456789')); ?>" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;" data-ie-setting="footer_phone"><?php echo htmlspecialchars(get_setting($pdo, 'footer_phone', '+33 (0)1 23 45 67 89')); ?></a></li>
+                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>contact" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Formulaire de contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:1.5rem 0; font-size:0.85rem; color:rgba(255,255,255,0.5);">
+            <p data-ie-setting="footer_copyright" class="mb-0">&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars(get_setting($pdo, 'footer_copyright', 'Noor Guide — Tous droits réservés.')); ?></p>
+            <nav aria-label="Liens légaux" class="d-flex gap-2">
+                <a href="#" style="color:rgba(255,255,255,0.5); text-decoration:none;">Mentions légales</a>
+                <span>&middot;</span>
+                <a href="#" style="color:rgba(255,255,255,0.5); text-decoration:none;">Politique de confidentialité</a>
+            </nav>
         </div>
     </div>
 </footer>

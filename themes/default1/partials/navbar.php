@@ -6,11 +6,10 @@ $menuItems  = $mainMenu ? $menuModel->getItemsWithChildren($mainMenu['id']) : []
 ?>
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
     <div class="container">
-        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?php echo BASE_URL; ?>" aria-label="Noor Guide — Retour à l'accueil">
-            <span class="d-inline-flex align-items-center justify-content-center rounded" style="width:40px;height:40px;background:#FF6B00;color:#fff;font-weight:900;font-size:1.1rem;border-radius:12px;">N</span>
-            <span style="color:#1A1A2E;">Noor<span style="color:#FF6B00;">Guide</span></span>
+        <a class="navbar-brand fw-bold" href="<?php echo BASE_URL; ?>">
+            <img src="<?php echo BASE_URL; ?>assets/img/logo.jpg" alt="Logo" style="height:40px;">
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Ouvrir le menu de navigation">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
