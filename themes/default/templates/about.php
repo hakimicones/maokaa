@@ -34,6 +34,7 @@ $isAdmin = isLoggedIn();
     <?php theme_partial('footer'); ?>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?php echo BASE_URL; ?>assets/js/main.js"></script>
+    <script src="<?php echo theme_url('assets/js/maokaa.js'); ?>"></script>
        <?php if ($isAdmin): ?>
     <script src="<?php echo BASE_URL; ?>assets/js/inline-edit.js"></script>
     <?php endif; ?>
