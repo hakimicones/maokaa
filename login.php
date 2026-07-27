@@ -140,7 +140,7 @@ $csrfToken = generateCSRFToken();
     <div class="login-container">
         <div class="login-card">
             <div class="login-header">
-                <h1>VEP Admin</h1>
+                <h1>Administrator</h1>
                 <p>Connexion Administrateur</p>
             </div>
 

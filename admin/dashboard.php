@@ -5,9 +5,13 @@
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/modules.php';
 
 // Vérifier l'authentification
 requirePasswordChange();
+
+// Initialiser les modules
+ModuleRegistry::init($pdo);
 
 // Charger les modèles
 require_once __DIR__ . '/../app/models/Product.php';
@@ -51,6 +55,7 @@ $section = $_GET['section'] ?? 'overview';
 // Traiter les actions POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+    $section = $_POST['section'] ?? $section;
     
     // Vérifier le CSRF token
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -61,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     switch ($action) {
         case 'delete_product':
+            if (!is_module_enabled('products')) break;
             if ($productModel->delete($_POST['id'])) {
                 setFlash('success', 'Produit supprimé avec succès');
                 logAudit('delete_product', 'ID: ' . $_POST['id']);
@@ -68,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
         
         case 'delete_brand':
+            if (!is_module_enabled('brands')) break;
             if ($brandModel->delete($_POST['id'])) {
                 setFlash('success', 'Marque supprimée avec succès');
                 logAudit('delete_brand', 'ID: ' . $_POST['id']);
@@ -75,6 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
         
         case 'delete_partner':
+            if (!is_module_enabled('partners')) break;
             if ($partnerModel->delete($_POST['id'])) {
                 setFlash('success', 'Partenaire supprimé avec succès');
                 logAudit('delete_partner', 'ID: ' . $_POST['id']);
@@ -82,6 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
         
         case 'delete_news':
+            if (!is_module_enabled('news')) break;
             if ($newsModel->delete($_POST['id'])) {
                 setFlash('success', 'Actualité supprimée avec succès');
                 logAudit('delete_news', 'ID: ' . $_POST['id']);
@@ -89,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
         
         case 'delete_message':
+            if (!is_module_enabled('messages')) break;
             if ($contactModel->delete($_POST['id'])) {
                 setFlash('success', 'Message supprimé avec succès');
                 logAudit('delete_message', 'ID: ' . $_POST['id']);
@@ -116,6 +126,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         setFlash('error', 'Erreur lors de la suppression de l\'utilisateur');
     }
     break;
+
+    case 'toggle_module':
+        if (!hasRole('admin')) {
+            setFlash('error', 'Accès interdit. Droits admin requis.');
+            break;
+        }
+        $moduleSlug = $_POST['module_slug'] ?? '';
+        if (!empty($moduleSlug)) {
+            $isCurrentlyEnabled = ModuleRegistry::isEnabled($moduleSlug);
+            if ($isCurrentlyEnabled) {
+                if (ModuleRegistry::disable($moduleSlug)) {
+                    setFlash('success', 'Module "' . htmlspecialchars($moduleSlug) . '" désactivé');
+                } else {
+                    setFlash('error', 'Impossible de désactiver (module core ou dépendances actives)');
+                }
+            } else {
+                if (ModuleRegistry::enable($moduleSlug)) {
+                    setFlash('success', 'Module "' . htmlspecialchars($moduleSlug) . '" activé');
+                } else {
+                    setFlash('error', 'Impossible d\'activer le module (dépendances manquantes)');
+                }
+            }
+        }
+        break;
 
     }
     
@@ -465,7 +499,7 @@ $csrfToken = generateCSRFToken();
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="brand">
-            <i class="fas fa-cog"></i> VEP Admin
+            <i class="fas fa-cog"></i> Administrator
         </div>
         <ul class="nav-menu">
             <li class="nav-item">
@@ -473,6 +507,7 @@ $csrfToken = generateCSRFToken();
                     <i class="fas fa-dashboard"></i> Tableau de bord
                 </a>
             </li>
+            <?php if (is_module_enabled('products')): ?>
             <li class="nav-item">
                 <a href="?section=products" class="nav-link <?php echo $section === 'products' ? 'active' : ''; ?>">
                     <i class="fas fa-box"></i> Produits
@@ -483,26 +518,34 @@ $csrfToken = generateCSRFToken();
                     <i class="fas fa-list"></i> Catégories
                 </a>
             </li>
+            <?php endif; ?>
             <li class="nav-item">
                 <a href="?section=content" class="nav-link <?php echo $section === 'content' ? 'active' : ''; ?>">
                     <i class="fas fa-file-lines"></i> Pages CMS
                 </a>
             </li>
+            <?php if (is_module_enabled('brands')): ?>
             <li class="nav-item">
                 <a href="?section=brands" class="nav-link <?php echo $section === 'brands' ? 'active' : ''; ?>">
                     <i class="fas fa-tag"></i> Marques
                 </a>
             </li>
+            <?php endif; ?>
+            <?php if (is_module_enabled('partners')): ?>
             <li class="nav-item">
                 <a href="?section=partners" class="nav-link <?php echo $section === 'partners' ? 'active' : ''; ?>">
                     <i class="fas fa-handshake"></i> Partenaires
                 </a>
             </li>
+            <?php endif; ?>
+            <?php if (is_module_enabled('news')): ?>
             <li class="nav-item">
                 <a href="?section=news" class="nav-link <?php echo $section === 'news' ? 'active' : ''; ?>">
                     <i class="fas fa-newspaper"></i> Actualités
                 </a>
             </li>
+            <?php endif; ?>
+            <?php if (is_module_enabled('messages')): ?>
             <li class="nav-item">
                 <a href="?section=messages" class="nav-link <?php echo $section === 'messages' ? 'active' : ''; ?>">
                     <i class="fas fa-envelope"></i> Messages
@@ -511,18 +554,28 @@ $csrfToken = generateCSRFToken();
                     <?php endif; ?>
                 </a>
             </li>
+            <?php endif; ?>
+            <?php if (is_module_enabled('media')): ?>
             <li class="nav-item">
                 <a href="media/index.php" class="nav-link">
                     <i class="fas fa-photo-video"></i> Médias
                 </a>
             </li>
+            <?php endif; ?>
+            <?php if (is_module_enabled('menus')): ?>
             <li class="nav-item">
                 <a href="menus/index.php" class="nav-link">
                     <i class="fas fa-bars"></i> Menus
                 </a>
             </li>
+            <?php endif; ?>
 
             <?php if (hasRole('admin')): ?>
+            <li class="nav-item">
+                <a href="?section=modules" class="nav-link <?php echo $section === 'modules' ? 'active' : ''; ?>">
+                    <i class="fas fa-puzzle-piece"></i> Modules
+                </a>
+            </li>
             <li class="nav-item">
     <a href="?section=users" class="nav-link <?php echo $section === 'users' ? 'active' : ''; ?>">
         <i class="fas fa-users"></i> Utilisateurs
@@ -530,12 +583,13 @@ $csrfToken = generateCSRFToken();
 </li>
 <?php endif; ?>
 
-
+            <?php if (is_module_enabled('sliders')): ?>
             <li class="nav-item">
                 <a href="sliders/index.php" class="nav-link">
                     <i class="fas fa-images"></i> Sliders
                 </a>
             </li>
+            <?php endif; ?>
             <li class="nav-item">
                 <hr style="border-color: rgba(255, 255, 255, 0.2); margin: 10px 0;">
             </li>
@@ -574,6 +628,7 @@ $csrfToken = generateCSRFToken();
             <h3 class="mb-4">Tableau de bord</h3>
             
             <div class="row">
+                <?php if (is_module_enabled('products')): ?>
                 <div class="col-md-6 col-lg-3">
                     <div class="stat-card">
                         <h3><?php echo $stats['total_products']; ?></h3>
@@ -586,33 +641,43 @@ $csrfToken = generateCSRFToken();
                         <p>Catégories</p>
                     </div>
                 </div>
+                <?php endif; ?>
+                <?php if (is_module_enabled('brands')): ?>
                 <div class="col-md-6 col-lg-3">
                     <div class="stat-card">
                         <h3><?php echo $stats['total_brands']; ?></h3>
                         <p>Marques</p>
                     </div>
                 </div>
+                <?php endif; ?>
+                <?php if (is_module_enabled('partners')): ?>
                 <div class="col-md-6 col-lg-3">
                     <div class="stat-card">
                         <h3><?php echo $stats['total_partners']; ?></h3>
                         <p>Partenaires</p>
                     </div>
                 </div>
+                <?php endif; ?>
+                <?php if (is_module_enabled('news')): ?>
                 <div class="col-md-6 col-lg-3">
                     <div class="stat-card">
                         <h3><?php echo $stats['total_news']; ?></h3>
                         <p>Actualités</p>
                     </div>
                 </div>
+                <?php endif; ?>
+                <?php if (is_module_enabled('messages')): ?>
                 <div class="col-md-6 col-lg-3">
                     <div class="stat-card" style="border-top-color: #e74c3c;">
                         <h3 style="color: #e74c3c;"><?php echo $stats['unread_messages']; ?></h3>
                         <p>Messages non lus</p>
                     </div>
                 </div>
+                <?php endif; ?>
             </div>
             
             <div class="row mt-4">
+                <?php if (is_module_enabled('products')): ?>
                 <div class="col-md-6">
                     <h4>Derniers produits</h4>
                     <table class="table table-sm">
@@ -636,7 +701,9 @@ $csrfToken = generateCSRFToken();
                         </tbody>
                     </table>
                 </div>
+                <?php endif; ?>
                 
+                <?php if (is_module_enabled('messages')): ?>
                 <div class="col-md-6">
                     <h4>Derniers messages</h4>
                     <table class="table table-sm">
@@ -660,10 +727,12 @@ $csrfToken = generateCSRFToken();
                         </tbody>
                     </table>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
         
         <!-- Products Section -->
+        <?php if (is_module_enabled('products')): ?>
         <div class="content-section <?php echo $section === 'products' ? 'active' : ''; ?>" id="products">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3>Gestion des Produits</h3>
@@ -711,7 +780,9 @@ $csrfToken = generateCSRFToken();
                 </table>
             </div>
         </div>
+        <?php endif; ?>
 <!-- Categories Section -->
+<?php if (is_module_enabled('products')): ?>
 <div class="content-section <?php echo $section === 'categories' ? 'active' : ''; ?>" id="categories">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3>Gestion des Catégories</h3>
@@ -763,8 +834,7 @@ $csrfToken = generateCSRFToken();
         </table>
     </div>
 </div>
-        
-
+<?php endif; ?>
 
 
         <!-- Content Pages Section -->
@@ -860,6 +930,7 @@ $csrfToken = generateCSRFToken();
 
 
         <!-- Brands Section -->
+        <?php if (is_module_enabled('brands')): ?>
         <div class="content-section <?php echo $section === 'brands' ? 'active' : ''; ?>" id="brands">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3>Gestion des Marques</h3>
@@ -905,8 +976,10 @@ $csrfToken = generateCSRFToken();
                 </table>
             </div>
         </div>
+        <?php endif; ?>
         
         <!-- Partners Section -->
+        <?php if (is_module_enabled('partners')): ?>
         <div class="content-section <?php echo $section === 'partners' ? 'active' : ''; ?>" id="partners">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3>Gestion des Partenaires</h3>
@@ -952,8 +1025,10 @@ $csrfToken = generateCSRFToken();
                 </table>
             </div>
         </div>
+        <?php endif; ?>
         
         <!-- News Section -->
+        <?php if (is_module_enabled('news')): ?>
         <div class="content-section <?php echo $section === 'news' ? 'active' : ''; ?>" id="news">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3>Gestion des Actualités</h3>
@@ -997,8 +1072,10 @@ $csrfToken = generateCSRFToken();
                 </table>
             </div>
         </div>
+        <?php endif; ?>
         
         <!-- Messages Section -->
+        <?php if (is_module_enabled('messages')): ?>
         <div class="content-section <?php echo $section === 'messages' ? 'active' : ''; ?>" id="messages">
             <h3 class="mb-4">Messages de contact</h3>
             
@@ -1037,7 +1114,7 @@ $csrfToken = generateCSRFToken();
                 </table>
             </div>
         </div>
-
+        <?php endif; ?>
 
 
     <!-- Users Section -->
@@ -1102,6 +1179,60 @@ $csrfToken = generateCSRFToken();
     </div>
 </div>
 <?php endif; ?>
+
+    <!-- Modules Section -->
+    <?php if (hasRole('admin')): ?>
+    <div class="content-section <?php echo $section === 'modules' ? 'active' : ''; ?>" id="modules">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-puzzle-piece me-2"></i>Gestion des Modules</h2>
+        </div>
+
+        <div class="row">
+            <?php
+            $allModules = $pdo->query("SELECT * FROM modules ORDER BY type, name")->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($allModules as $mod):
+                $isEnabled = (bool)$mod['enabled'];
+                $typeBadge = match($mod['type']) {
+                    'core'  => 'bg-danger',
+                    'annex' => 'bg-warning text-dark',
+                    'addon' => 'bg-success',
+                    default => 'bg-secondary'
+                };
+            ?>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0"><?php echo htmlspecialchars($mod['name']); ?></h5>
+                            <span class="badge <?php echo $typeBadge; ?>"><?php echo $mod['type']; ?></span>
+                        </div>
+                        <p class="card-text text-muted small"><?php echo htmlspecialchars($mod['description'] ?? ''); ?></p>
+                        <?php if (!empty($mod['depends_on'])): ?>
+                        <p class="card-text"><small class="text-muted">Dépend de : <?php echo htmlspecialchars($mod['depends_on']); ?></small></p>
+                        <?php endif; ?>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <?php if ($mod['type'] === 'core'): ?>
+                            <span class="badge bg-danger"><i class="fas fa-lock me-1"></i>Core (toujours actif)</span>
+                        <?php else: ?>
+                        <form method="POST" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                            <input type="hidden" name="action" value="toggle_module">
+                            <input type="hidden" name="module_slug" value="<?php echo htmlspecialchars($mod['slug']); ?>">
+                            <input type="hidden" name="section" value="modules">
+                            <button type="submit" class="btn btn-sm <?php echo $isEnabled ? 'btn-outline-danger' : 'btn-outline-success'; ?>">
+                                <i class="fas fa-<?php echo $isEnabled ? 'power-off' : 'power-off'; ?>"></i>
+                                <?php echo $isEnabled ? 'Désactiver' : 'Activer'; ?>
+                            </button>
+                        </form>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 
     </div>
     
