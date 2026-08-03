@@ -4,37 +4,71 @@ if (!function_exists('get_setting')) {
     require_once dirname(__DIR__, 3) . '/includes/settings_helpers.php';
 }
 $footerAdmin = function_exists('isLoggedIn') && isLoggedIn();
+$siteName = get_setting($pdo, 'site_name', 'Noor Guide');
+$siteName = str_replace("\xC2\xA0", ' ', html_entity_decode($siteName, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+$siteLogo = get_setting($pdo, 'site_logo', '');
+$siteInitial = function_exists('mb_substr') ? mb_substr(trim($siteName), 0, 1) : substr(trim($siteName), 0, 1);
+$nameParts = explode(' ', trim($siteName), 2);
+
+$footerColumns = json_decode(get_setting($pdo, 'footer_columns', ''), true);
+if (!is_array($footerColumns) || empty($footerColumns)) {
+    $footerColumns = [
+        ['title' => 'Application', 'links' => [
+            ['label' => 'Fonctionnalités', 'url' => '#features'],
+            ['label' => 'Comment ça marche', 'url' => '#how-it-works'],
+            ['label' => 'Accessibilité', 'url' => '#accessibility'],
+            ['label' => 'Télécharger', 'url' => '#contact'],
+        ]],
+        ['title' => 'Ressources', 'links' => [
+            ['label' => 'Documentation', 'url' => 'documentation'],
+            ['label' => 'FAQ', 'url' => 'faq'],
+            ['label' => 'Blog', 'url' => 'blog'],
+            ['label' => 'Support', 'url' => 'support'],
+        ]],
+    ];
+}
 ?>
 <footer style="background:#0F0F1A; color:rgba(255,255,255,0.8); padding:4rem 0 0;">
     <div class="container">
-        <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:3rem; padding-bottom:3rem; border-bottom:1px solid rgba(255,255,255,0.1);">
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:3rem; padding-bottom:3rem; border-bottom:1px solid rgba(255,255,255,0.1);" data-footer-cols='<?php echo htmlspecialchars(json_encode($footerColumns, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS), ENT_QUOTES, 'UTF-8'); ?>'>
             <div>
-                <a href="<?php echo BASE_URL; ?>" class="d-flex align-items-center gap-2 text-decoration-none mb-3" aria-label="Noor Guide — Retour à l'accueil" style="color:#fff; font-size:1.4rem; font-weight:700;">
-                    <span class="d-inline-flex align-items-center justify-content-center rounded" style="width:40px;height:40px;background:#FF6B00;color:#fff;font-weight:900;font-size:1rem;border-radius:12px;">N</span>
-                    <span>Noor<span style="color:#FF6B00;">Guide</span></span>
+                <a href="<?php echo BASE_URL; ?>" class="d-flex align-items-center gap-2 text-decoration-none mb-3" aria-label="<?php echo htmlspecialchars($siteName); ?> — Retour à l'accueil" style="color:#fff; font-size:1.4rem; font-weight:700;">
+                    <?php if (!empty($siteLogo)): ?>
+                        <img src="<?php echo BASE_URL . ltrim($siteLogo, '/'); ?>" alt="<?php echo htmlspecialchars($siteName); ?>" data-ie-logo style="height:40px;width:auto;border-radius:12px;">
+                    <?php else: ?>
+                        <span data-ie-logo class="d-inline-flex align-items-center justify-content-center rounded" style="width:40px;height:40px;background:#FF6B00;color:#fff;font-weight:900;font-size:1rem;border-radius:12px;"><?php echo htmlspecialchars($siteInitial); ?></span>
+                    <?php endif; ?>
+                    <span data-ie-setting="site_name"><?php echo htmlspecialchars($nameParts[0]); ?><?php if (isset($nameParts[1]) && $nameParts[1] !== ''): ?><span style="color:#FF6B00;"> <?php echo htmlspecialchars($nameParts[1]); ?></span><?php endif; ?></span>
                 </a>
                 <p data-ie-setting="footer_description" style="font-size:0.95rem; color:rgba(255,255,255,0.7); margin-top:0.75rem; line-height:1.7;">
                     <?php echo htmlspecialchars(get_setting($pdo, 'footer_description', 'Application mobile de guidage pour personnes aveugles et malvoyantes. Navigation intelligente, parcours personnalisés et détection Bluetooth.')); ?>
                 </p>
             </div>
-            <div>
-                <h5 style="font-weight:700; font-size:1rem; letter-spacing:1px; text-transform:uppercase; color:#fff; margin-bottom:1.2rem;">Application</h5>
+            <?php foreach ($footerColumns as $fcIndex => $fc):
+                $fcTitle = $fc['title'] ?? '';
+                $fcLinks = isset($fc['links']) && is_array($fc['links']) ? $fc['links'] : [];
+            ?>
+            <div data-ie-footer-col="<?php echo $fcIndex; ?>" style="position:relative;">
+                <?php if ($footerAdmin): ?>
+                <button type="button" class="ie-footer-edit" data-ie-footer-edit="<?php echo $fcIndex; ?>" title="Modifier cette colonne" aria-label="Modifier la colonne <?php echo htmlspecialchars($fcTitle); ?>">✎</button>
+                <?php endif; ?>
+                <h5 style="font-weight:700; font-size:1rem; letter-spacing:1px; text-transform:uppercase; color:#fff; margin-bottom:1.2rem;"><?php echo htmlspecialchars($fcTitle); ?></h5>
                 <ul style="list-style:none; padding:0;">
-                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>#features" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Fonctionnalités</a></li>
-                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>#how-it-works" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Comment ça marche</a></li>
-                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>#accessibility" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Accessibilité</a></li>
-                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>#contact" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Télécharger</a></li>
+                    <?php foreach ($fcLinks as $link):
+                        $linkUrl = trim($link['url'] ?? '');
+                        if ($linkUrl === '') {
+                            $href = '#';
+                        } elseif (preg_match('#^(https?://|//|mailto:|tel:)#i', $linkUrl)) {
+                            $href = $linkUrl;
+                        } else {
+                            $href = BASE_URL . ltrim($linkUrl, '/');
+                        }
+                    ?>
+                    <li style="margin-bottom:0.6rem;"><a href="<?php echo htmlspecialchars($href); ?>" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;"><?php echo htmlspecialchars($link['label'] ?? ''); ?></a></li>
+                    <?php endforeach; ?>
                 </ul>
             </div>
-            <div>
-                <h5 style="font-weight:700; font-size:1rem; letter-spacing:1px; text-transform:uppercase; color:#fff; margin-bottom:1.2rem;">Ressources</h5>
-                <ul style="list-style:none; padding:0;">
-                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>documentation" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Documentation</a></li>
-                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>faq" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">FAQ</a></li>
-                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>blog" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Blog</a></li>
-                    <li style="margin-bottom:0.6rem;"><a href="<?php echo BASE_URL; ?>support" style="color:rgba(255,255,255,0.7); font-size:0.95rem; text-decoration:none;">Support</a></li>
-                </ul>
-            </div>
+            <?php endforeach; ?>
             <div>
                 <h5 style="font-weight:700; font-size:1rem; letter-spacing:1px; text-transform:uppercase; color:#fff; margin-bottom:1.2rem;">Contact</h5>
                 <ul style="list-style:none; padding:0;">
@@ -56,66 +90,5 @@ $footerAdmin = function_exists('isLoggedIn') && isLoggedIn();
 </footer>
 
 <?php if ($footerAdmin): ?>
-<?php $footerCsrf = function_exists('generateCSRFToken') ? generateCSRFToken() : ''; ?>
-<script>
-(function() {
-    var csrfToken = '<?php echo htmlspecialchars($footerCsrf, ENT_QUOTES); ?>';
-    var baseUrl   = '<?php echo BASE_URL; ?>';
-
-    document.querySelectorAll('[data-ie-setting]').forEach(function(el) {
-        el.setAttribute('contenteditable', 'true');
-        el.classList.add('ie-field');
-
-        var original = el.innerHTML;
-
-        el.addEventListener('focus', function() {
-            this.classList.add('ie-editing');
-        });
-
-        el.addEventListener('keydown', function(e) {
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); this.blur(); }
-            if (e.key === 'Escape') { this.innerHTML = original; this.blur(); }
-        });
-
-        el.addEventListener('blur', function() {
-            var self = this;
-            self.classList.remove('ie-editing');
-            var current = self.innerHTML;
-            if (current === original) return;
-            self.classList.add('ie-saving');
-
-            var key = self.getAttribute('data-ie-setting');
-
-            fetch(baseUrl + 'includes/inline_edit_setting.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    csrf_token: csrfToken,
-                    key: key,
-                    value: current
-                })
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                self.classList.remove('ie-saving');
-                if (data.success) {
-                    original = current;
-                    self.classList.add('ie-success');
-                    setTimeout(function() { self.classList.remove('ie-success'); }, 1800);
-                } else {
-                    self.innerHTML = original;
-                    self.classList.add('ie-error');
-                    setTimeout(function() { self.classList.remove('ie-error'); }, 1800);
-                }
-            })
-            .catch(function() {
-                self.classList.remove('ie-saving');
-                self.innerHTML = original;
-                self.classList.add('ie-error');
-                setTimeout(function() { self.classList.remove('ie-error'); }, 1800);
-            });
-        });
-    });
-})();
-</script>
+<script src="<?php echo theme_url('assets/js/site-editing.js'); ?>"></script>
 <?php endif; ?>

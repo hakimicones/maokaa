@@ -6,6 +6,8 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/modules.php';
+require_once __DIR__ . '/../includes/settings_helpers.php';
+require_once __DIR__ . '/../includes/upload.php';
 
 // Vérifier l'authentification
 requirePasswordChange();
@@ -149,6 +151,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
+        break;
+
+    case 'save_settings':
+        if (!hasRole('admin')) {
+            setFlash('error', 'Accès interdit. Droits admin requis.');
+            break;
+        }
+        $newLogo = get_setting($pdo, 'site_logo', '');
+        if (!empty($_FILES['site_logo']['name'])) {
+            $uploadDir = __DIR__ . '/../assets/images/settings/';
+            $res = upload_image($_FILES['site_logo'], $uploadDir, 'logo');
+            if (!empty($res['error'])) {
+                setFlash('error', $res['error']);
+                break;
+            }
+            $newLogo = 'assets/images/settings/' . $res['filename'];
+        }
+        if (!empty($_POST['remove_logo'])) {
+            $newLogo = '';
+        }
+        $siteNameVal = str_replace("\xC2\xA0", ' ', html_entity_decode(trim($_POST['site_name'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        set_setting($pdo, 'site_name', $siteNameVal);
+        set_setting($pdo, 'site_logo', $newLogo);
+        set_setting($pdo, 'footer_description', trim($_POST['footer_description'] ?? ''));
+        set_setting($pdo, 'footer_email', trim($_POST['footer_email'] ?? ''));
+        set_setting($pdo, 'footer_phone', trim($_POST['footer_phone'] ?? ''));
+        set_setting($pdo, 'footer_copyright', trim($_POST['footer_copyright'] ?? ''));
+
+        // Colonnes du footer (JSON)
+        $cols = [];
+        for ($i = 1; $i <= 3; $i++) {
+            $colTitle = trim($_POST["footer_col_{$i}_title"] ?? '');
+            $links    = [];
+            $lines    = preg_split('/\r\n|\r|\n/', trim($_POST["footer_col_{$i}_links"] ?? ''));
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if ($line === '') continue;
+                $parts = array_map('trim', explode('|', $line, 2));
+                $links[] = ['label' => $parts[0], 'url' => $parts[1] ?? ''];
+            }
+            if ($colTitle !== '' || count($links) > 0) {
+                $cols[] = ['title' => $colTitle, 'links' => $links];
+            }
+        }
+        if (count($cols) > 0) {
+            set_setting($pdo, 'footer_columns', json_encode($cols, JSON_UNESCAPED_UNICODE));
+        }
+        setFlash('success', 'Réglages enregistrés avec succès');
+        logAudit('save_settings', 'Réglages du site modifiés');
         break;
 
     }
@@ -571,6 +622,11 @@ $csrfToken = generateCSRFToken();
             <?php endif; ?>
 
             <?php if (hasRole('admin')): ?>
+            <li class="nav-item">
+                <a href="?section=settings" class="nav-link <?php echo $section === 'settings' ? 'active' : ''; ?>">
+                    <i class="fas fa-sliders-h"></i> Réglages du site
+                </a>
+            </li>
             <li class="nav-item">
                 <a href="?section=modules" class="nav-link <?php echo $section === 'modules' ? 'active' : ''; ?>">
                     <i class="fas fa-puzzle-piece"></i> Modules
@@ -1230,6 +1286,123 @@ $csrfToken = generateCSRFToken();
                 </div>
             </div>
             <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if (hasRole('admin')): ?>
+    <div class="content-section <?php echo $section === 'settings' ? 'active' : ''; ?>" id="settings">
+        <h3 class="mb-4"><i class="fas fa-sliders-h me-2"></i>Réglages du site</h3>
+        <div class="row">
+            <div class="col-lg-8">
+                <form method="POST" enctype="multipart/form-data" class="card shadow-sm border-0">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="action" value="save_settings">
+                    <input type="hidden" name="section" value="settings">
+
+                    <div class="card-body">
+                        <h5 class="mb-3"><i class="fas fa-id-badge me-2"></i>Identité du site</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Nom du site</label>
+                            <?php $siteNameVal = str_replace("\xC2\xA0", ' ', html_entity_decode(get_setting($pdo, 'site_name', 'Noor Guide'), ENT_QUOTES | ENT_HTML5, 'UTF-8')); ?>
+                            <input type="text" name="site_name" class="form-control"
+                                   value="<?php echo htmlspecialchars($siteNameVal); ?>" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Logo</label>
+                            <input type="file" name="site_logo" class="form-control" accept="image/png,image/jpeg,image/webp">
+                            <?php $currentLogo = get_setting($pdo, 'site_logo', ''); ?>
+                            <?php if (!empty($currentLogo)): ?>
+                                <div class="mt-2 d-flex align-items-center gap-3">
+                                    <img src="<?php echo BASE_URL . ltrim($currentLogo, '/'); ?>" alt="Logo actuel" style="max-height:48px;border-radius:8px;">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="remove_logo" value="1" class="form-check-input" id="remove_logo">
+                                        <label class="form-check-label" for="remove_logo">Supprimer le logo actuel</label>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <div class="form-text">Aucun logo défini. Si aucun logo n'est fourni, l'initiale du nom est affichée.</div>
+                            <?php endif; ?>
+                        </div>
+
+                        <hr>
+
+                        <h5 class="mb-3"><i class="fas fa-shoe-prints me-2"></i>Pied de page (footer)</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="footer_description" class="form-control" rows="3"><?php echo htmlspecialchars(get_setting($pdo, 'footer_description', 'Application mobile de guidage pour personnes aveugles et malvoyantes.')); ?></textarea>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Email de contact</label>
+                                <input type="email" name="footer_email" class="form-control"
+                                       value="<?php echo htmlspecialchars(get_setting($pdo, 'footer_email', 'contact@noorguide.com')); ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Téléphone</label>
+                                <input type="text" name="footer_phone" class="form-control"
+                                       value="<?php echo htmlspecialchars(get_setting($pdo, 'footer_phone', '+33 (0)1 23 45 67 89')); ?>">
+                            </div>
+                        </div>
+                        <div class="mb-3 mt-3">
+                            <label class="form-label">Texte de copyright</label>
+                            <input type="text" name="footer_copyright" class="form-control"
+                                   value="<?php echo htmlspecialchars(get_setting($pdo, 'footer_copyright', 'Noor Guide — Tous droits réservés.')); ?>">
+                        </div>
+
+                        <hr>
+
+                        <h5 class="mb-3"><i class="fas fa-link me-2"></i>Colonnes de liens du footer</h5>
+                        <?php
+                        $footerColumns = json_decode(get_setting($pdo, 'footer_columns', ''), true);
+                        if (!is_array($footerColumns) || empty($footerColumns)) {
+                            $footerColumns = [
+                                ['title' => 'Application', 'links' => [
+                                    ['label' => 'Fonctionnalités', 'url' => '#features'],
+                                    ['label' => 'Comment ça marche', 'url' => '#how-it-works'],
+                                    ['label' => 'Accessibilité', 'url' => '#accessibility'],
+                                    ['label' => 'Télécharger', 'url' => '#contact'],
+                                ]],
+                                ['title' => 'Ressources', 'links' => [
+                                    ['label' => 'Documentation', 'url' => 'documentation'],
+                                    ['label' => 'FAQ', 'url' => 'faq'],
+                                    ['label' => 'Blog', 'url' => 'blog'],
+                                    ['label' => 'Support', 'url' => 'support'],
+                                ]],
+                            ];
+                        }
+                        $footerColumns = array_pad(array_slice($footerColumns, 0, 3), 3, ['title' => '', 'links' => []]);
+                        foreach ($footerColumns as $colIdx => $col):
+                            $colTitle = $col['title'] ?? '';
+                            $colLinks = isset($col['links']) && is_array($col['links']) ? $col['links'] : [];
+                            $colLinksText = '';
+                            foreach ($colLinks as $l) {
+                                $colLinksText .= ($l['label'] ?? '') . '|' . ($l['url'] ?? '') . "\n";
+                            }
+                        ?>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Titre colonne <?php echo $colIdx + 1; ?></label>
+                                <input type="text" name="footer_col_<?php echo $colIdx + 1; ?>_title" class="form-control"
+                                       value="<?php echo htmlspecialchars($colTitle); ?>">
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Liens (un par ligne : <code>Libellé|URL</code>)</label>
+                                <textarea name="footer_col_<?php echo $colIdx + 1; ?>_links" class="form-control" rows="5"
+                                          placeholder="Fonctionnalités|#features"><?php echo htmlspecialchars(rtrim($colLinksText)); ?></textarea>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                        <div class="form-text">Astuce : le lien peut être relatif (<code>documentation</code>), une ancre (<code>#features</code>) ou une URL complète (<code>https://...</code>).</div>
+                    </div>
+
+                    <div class="card-footer bg-transparent d-flex justify-content-end gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Enregistrer les réglages
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
     <?php endif; ?>

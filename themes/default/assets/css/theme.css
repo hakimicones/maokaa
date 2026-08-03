@@ -143,6 +143,27 @@ p {
 }
 
 /* --- Header & Navigation --- */
+#main-menu-nav {
+  flex: 1 1 0;
+  justify-content: center;
+}
+.navbar-right {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 991.98px) {
+  #main-menu-nav {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+  }
+  .navbar-right {
+    margin-top: 0.5rem;
+    padding-left: 0;
+  }
+}
+
 .site-header {
   background: var(--white);
   border-bottom: 1px solid var(--border);
@@ -207,21 +228,6 @@ p {
 .nav-main a[aria-current="page"] {
   background: var(--bg-alt);
   color: var(--primary);
-}
-
-.nav-cta {
-  background: var(--primary) !important;
-  color: var(--white) !important;
-  padding: 0.6rem 1.5rem !important;
-  border-radius: 8px !important;
-  font-weight: 700 !important;
-  margin-left: 0.5rem;
-}
-
-.nav-cta:hover,
-.nav-cta:focus {
-  background: var(--primary-dark) !important;
-  transform: translateY(-1px);
 }
 
 .menu-toggle {
@@ -1365,12 +1371,6 @@ p {
     padding: 0.8rem 1rem;
   }
 
-  .nav-cta {
-    margin-left: 0 !important;
-    text-align: center;
-    justify-content: center;
-  }
-
   .hero { padding: 3rem 0; text-align: center; }
   .hero h1 { font-size: 2.2rem; }
   .hero p { margin: 0 auto 2rem; }
@@ -1409,3 +1409,81 @@ p {
     background: #fff;
   }
 }
+
+/* --- Édition inline admin (footer / logo) --- */
+[data-ie-setting] { outline: none; }
+.ie-field { cursor: text; }
+.ie-editing {
+  outline: 2px dashed var(--primary, #FF6B00);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.ie-saving { opacity: 0.5; }
+.ie-success { box-shadow: 0 0 0 2px #27ae60; border-radius: 6px; transition: box-shadow 0.3s; }
+.ie-error { box-shadow: 0 0 0 2px #c0392b; border-radius: 6px; transition: box-shadow 0.3s; }
+
+[data-ie-logo] { border-radius: 12px; }
+[data-ie-logo]:hover {
+  outline: 2px dashed var(--primary, #FF6B00);
+  outline-offset: 3px;
+  box-shadow: 0 4px 14px rgba(255, 107, 0, 0.25);
+}
+
+.ie-footer-edit {
+  position: absolute;
+  top: -10px;
+  right: -6px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary, #FF6B00);
+  color: #fff;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  z-index: 5;
+}
+.ie-footer-edit:hover {
+  transform: scale(1.1);
+  background: #e05e00;
+}
+
+/* --- Boutons d'édition du menu (header) --- */
+.ie-menu-actions {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 20;
+}
+li[data-ie-menu-item] { position: relative; }
+li[data-ie-menu-item]:hover .ie-menu-actions { opacity: 1; }
+.ie-menu-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--primary, #FF6B00);
+  color: #fff;
+  font-size: 0.7rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.ie-menu-btn.danger { background: #c0392b; }
+.ie-menu-btn:hover { transform: scale(1.12); }
+
+[data-ie-menu-add] {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  white-space: nowrap;
+}
+[data-ie-menu-add]:hover { color: var(--primary, #FF6B00) !important; }
