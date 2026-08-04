@@ -623,11 +623,6 @@ $csrfToken = generateCSRFToken();
 
             <?php if (hasRole('admin')): ?>
             <li class="nav-item">
-                <a href="?section=settings" class="nav-link <?php echo $section === 'settings' ? 'active' : ''; ?>">
-                    <i class="fas fa-sliders-h"></i> Réglages du site
-                </a>
-            </li>
-            <li class="nav-item">
                 <a href="?section=modules" class="nav-link <?php echo $section === 'modules' ? 'active' : ''; ?>">
                     <i class="fas fa-puzzle-piece"></i> Modules
                 </a>

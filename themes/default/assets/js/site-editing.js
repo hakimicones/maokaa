@@ -219,6 +219,129 @@
         });
     });
 
+    /* ---------- Édition des couleurs du logo (data-ie-color-edit) ---------- */
+    function normalizeColorValue(value) {
+        if (!value) return '';
+
+        var hexMatch = value.match(/#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})/);
+        if (hexMatch) {
+            var hex = hexMatch[1];
+            if (hex.length === 3) {
+                hex = hex.split('').map(function (c) { return c + c; }).join('');
+            }
+            return '#' + hex.toUpperCase();
+        }
+
+        var rgbMatch = value.match(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/i);
+        if (rgbMatch) {
+            var toHex = function (n) {
+                var v = parseInt(n, 10);
+                if (isNaN(v)) return '00';
+                return Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0').toUpperCase();
+            };
+            return '#' + toHex(rgbMatch[1]) + toHex(rgbMatch[2]) + toHex(rgbMatch[3]);
+        }
+
+        return '';
+    }
+
+    function openColorEditor(triggerEl) {
+        var scope = triggerEl && triggerEl.closest('a') ? triggerEl.closest('a') : document;
+        var nameInput = scope.querySelector ? scope.querySelector('[data-ie-setting="site_name"]') : document.querySelector('[data-ie-setting="site_name"]');
+        var currentMain = '#1A1A2E';
+        var currentAccent = '#FF6B00';
+        if (nameInput) {
+            var inlineMain = normalizeColorValue(nameInput.style.color || '');
+            if (inlineMain) {
+                currentMain = inlineMain;
+            } else {
+                var computedMain = normalizeColorValue(window.getComputedStyle(nameInput).color || '');
+                if (computedMain) currentMain = computedMain;
+            }
+
+            var accentEl = nameInput.querySelector('span');
+            if (accentEl) {
+                var inlineAccent = normalizeColorValue(accentEl.style.color || '');
+                if (inlineAccent) {
+                    currentAccent = inlineAccent;
+                } else {
+                    var computedAccent = normalizeColorValue(window.getComputedStyle(accentEl).color || '');
+                    if (computedAccent) currentAccent = computedAccent;
+                }
+            }
+        }
+
+        var overlay = openModal('');
+        var box = overlay.firstChild;
+
+        var body = document.createElement('div');
+        body.style.cssText = 'padding:1.4rem 1.25rem 0;';
+        body.innerHTML =
+            '<h3 style="margin:0 0 1rem;font-size:1.15rem;color:#1A1A2E;">Couleurs du logo</h3>' +
+            '<div style="display:flex;gap:1rem;margin-bottom:1rem;">' +
+                '<div style="flex:1;">' +
+                    '<label style="display:block;font-size:0.85rem;font-weight:600;color:#555;margin-bottom:0.3rem;">Texte principal</label>' +
+                    '<input type="color" data-ie-color-main value="' + esc(currentMain) + '" style="width:100%;height:44px;border:1px solid #d0d0e0;border-radius:8px;cursor:pointer;">' +
+                '</div>' +
+                '<div style="flex:1;">' +
+                    '<label style="display:block;font-size:0.85rem;font-weight:600;color:#555;margin-bottom:0.3rem;">Accent (2ᵉ mot)</label>' +
+                    '<input type="color" data-ie-color-accent value="' + esc(currentAccent) + '" style="width:100%;height:44px;border:1px solid #d0d0e0;border-radius:8px;cursor:pointer;">' +
+                '</div>' +
+            '</div>' +
+            '<p data-ie-msg style="margin:0 0 1rem;font-size:0.85rem;color:#c0392b;display:none;"></p>';
+
+        var mainInput = body.querySelector('[data-ie-color-main]');
+        var accentInput = body.querySelector('[data-ie-color-accent]');
+        var msg = body.querySelector('[data-ie-msg]');
+
+        box.appendChild(body);
+        box.appendChild(modalButtons(overlay, function () {
+            msg.style.display = 'none';
+            var mainVal = mainInput.value || '#1A1A2E';
+            var accentVal = accentInput.value || '#FF6B00';
+
+            Promise.all([
+                fetch(baseUrl + 'includes/inline_edit_setting.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ csrf_token: csrfToken, key: 'site_name_color', value: mainVal })
+                }).then(function (r) { return r.json(); }),
+                fetch(baseUrl + 'includes/inline_edit_setting.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ csrf_token: csrfToken, key: 'site_name_color_accent', value: accentVal })
+                }).then(function (r) { return r.json(); })
+            ])
+            .then(function (results) {
+                var ok = results.every(function (d) { return d.success; });
+                if (ok) {
+                    closeModal(overlay);
+                    window.location.reload();
+                } else {
+                    msg.textContent = 'Erreur lors de l\'enregistrement.';
+                    msg.style.display = 'block';
+                    var saveBtn = overlay.querySelector('[data-ie-save]');
+                    if (saveBtn) saveBtn.disabled = false;
+                }
+            })
+            .catch(function () {
+                msg.textContent = 'Erreur réseau.';
+                msg.style.display = 'block';
+                var saveBtn = overlay.querySelector('[data-ie-save]');
+                if (saveBtn) saveBtn.disabled = false;
+            });
+        }, 'Enregistrer'));
+    }
+
+    document.querySelectorAll('[data-ie-color-edit]').forEach(function (el) {
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openColorEditor(el);
+        });
+    });
+
     /* ---------- Édition des colonnes du footer (data-ie-footer-edit) ---------- */
     var colsContainer = document.querySelector('[data-footer-cols]');
 

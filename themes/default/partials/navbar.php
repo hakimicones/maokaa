@@ -9,6 +9,8 @@ $menuItems  = $mainMenu ? $menuModel->getItemsWithChildren($mainMenu['id']) : []
 $siteName   = get_setting($pdo, 'site_name', 'Noor Guide');
 $siteName   = str_replace("\xC2\xA0", ' ', html_entity_decode($siteName, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 $siteLogo   = get_setting($pdo, 'site_logo', '');
+$nameColor  = get_setting($pdo, 'site_name_color', '#1A1A2E');
+$accentColor = get_setting($pdo, 'site_name_color_accent', '#FF6B00');
 $siteInitial = function_exists('mb_substr') ? mb_substr(trim($siteName), 0, 1) : substr(trim($siteName), 0, 1);
 $nameParts  = explode(' ', trim($siteName), 2);
 $isAdmin    = function_exists('isLoggedIn') && isLoggedIn();
@@ -26,7 +28,12 @@ if ($mainMenu) {
             <?php else: ?>
                 <span data-ie-logo class="d-inline-flex align-items-center justify-content-center rounded" style="width:40px;height:40px;background:#FF6B00;color:#fff;font-weight:900;font-size:1.1rem;border-radius:12px;"><?php echo htmlspecialchars($siteInitial); ?></span>
             <?php endif; ?>
-            <span data-ie-setting="site_name" style="color:#1A1A2E;"><?php echo htmlspecialchars($nameParts[0]); ?><?php if (isset($nameParts[1]) && $nameParts[1] !== ''): ?> <span style="color:#FF6B00;"><?php echo htmlspecialchars($nameParts[1]); ?></span><?php endif; ?></span>
+            <span data-ie-setting="site_name" style="color:<?php echo htmlspecialchars($nameColor, ENT_QUOTES, 'UTF-8'); ?>;"><?php echo htmlspecialchars($nameParts[0]); ?><?php if (isset($nameParts[1]) && $nameParts[1] !== ''): ?> <span style="color:<?php echo htmlspecialchars($accentColor, ENT_QUOTES, 'UTF-8'); ?>;"><?php echo htmlspecialchars($nameParts[1]); ?></span><?php endif; ?></span>
+            <?php if ($isAdmin): ?>
+            <span data-ie-color-edit class="ie-color-btn" title="Changer les couleurs du logo" aria-label="Changer les couleurs du logo" role="button" tabindex="0">
+                <i class="fas fa-palette"></i>
+            </span>
+            <?php endif; ?>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Ouvrir le menu de navigation">
             <span class="navbar-toggler-icon"></span>

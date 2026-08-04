@@ -1480,6 +1480,27 @@ li[data-ie-menu-item]:hover .ie-menu-actions { opacity: 1; }
 .ie-menu-btn.danger { background: #c0392b; }
 .ie-menu-btn:hover { transform: scale(1.12); }
 
+/* --- Palette : couleurs du texte du logo --- */
+.ie-color-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 6px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 107, 0, 0.12);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+.ie-color-btn:hover {
+  background: var(--primary, #FF6B00);
+  transform: scale(1.1);
+}
+
 [data-ie-menu-add] {
   display: flex;
   align-items: center;
