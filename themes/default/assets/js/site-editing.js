@@ -55,6 +55,9 @@
 
     /* ---------- Édition inline des textes (data-ie-setting) ---------- */
     document.querySelectorAll('[data-ie-setting]').forEach(function (el) {
+        // Le nom du logo s'édite via sa propre fenêtre de style
+        if (el.getAttribute('data-ie-setting') === 'site_name') return;
+
         el.setAttribute('contenteditable', 'true');
         el.classList.add('ie-field');
 
@@ -219,57 +222,72 @@
         });
     });
 
-    /* ---------- Édition des couleurs du logo (data-ie-color-edit) ---------- */
-    function normalizeColorValue(value) {
-        if (!value) return '';
-
-        var hexMatch = value.match(/#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})/);
-        if (hexMatch) {
-            var hex = hexMatch[1];
-            if (hex.length === 3) {
-                hex = hex.split('').map(function (c) { return c + c; }).join('');
-            }
-            return '#' + hex.toUpperCase();
+    /* ---------- Édition du style du logo (data-ie-color-edit) ---------- */
+    function brandValue(key, fallback) {
+        if (window.__ieBrand && window.__ieBrand[key] !== undefined && window.__ieBrand[key] !== '') {
+            return window.__ieBrand[key];
         }
-
-        var rgbMatch = value.match(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/i);
-        if (rgbMatch) {
-            var toHex = function (n) {
-                var v = parseInt(n, 10);
-                if (isNaN(v)) return '00';
-                return Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0').toUpperCase();
-            };
-            return '#' + toHex(rgbMatch[1]) + toHex(rgbMatch[2]) + toHex(rgbMatch[3]);
-        }
-
-        return '';
+        return fallback;
     }
 
-    function openColorEditor(triggerEl) {
-        var scope = triggerEl && triggerEl.closest('a') ? triggerEl.closest('a') : document;
-        var nameInput = scope.querySelector ? scope.querySelector('[data-ie-setting="site_name"]') : document.querySelector('[data-ie-setting="site_name"]');
-        var currentMain = '#1A1A2E';
-        var currentAccent = '#FF6B00';
-        if (nameInput) {
-            var inlineMain = normalizeColorValue(nameInput.style.color || '');
-            if (inlineMain) {
-                currentMain = inlineMain;
-            } else {
-                var computedMain = normalizeColorValue(window.getComputedStyle(nameInput).color || '');
-                if (computedMain) currentMain = computedMain;
-            }
+    function applyBrandStyles(b) {
+        document.querySelectorAll('[data-ie-setting="site_name"]').forEach(function (el) {
+            var style = 'color:' + b.color + ';';
+            if (b.font) style += 'font-family:' + b.font + ';';
+            if (b.size) style += 'font-size:' + b.size + ';';
+            style += 'font-weight:' + (b.bold ? '700' : '400') + ';';
+            style += 'font-style:' + (b.italic ? 'italic' : 'normal') + ';';
+            style += 'text-decoration:' + (b.underline ? 'underline' : 'none') + ';';
+            el.setAttribute('style', style);
+            el.innerHTML = esc(b.nameFirst) +
+                (b.nameRest !== '' ? ' <span style="color:' + b.accent + ';">' + esc(b.nameRest) + '</span>' : '');
+        });
+    }
 
-            var accentEl = nameInput.querySelector('span');
-            if (accentEl) {
-                var inlineAccent = normalizeColorValue(accentEl.style.color || '');
-                if (inlineAccent) {
-                    currentAccent = inlineAccent;
-                } else {
-                    var computedAccent = normalizeColorValue(window.getComputedStyle(accentEl).color || '');
-                    if (computedAccent) currentAccent = computedAccent;
-                }
-            }
+    function openBrandEditor() {
+        var nameEl = document.querySelector('[data-ie-setting="site_name"]');
+        var nameText = '';
+        if (nameEl) {
+            nameText = nameEl.textContent.replace(/\s+/g, ' ').trim();
+            if (nameText === '') nameText = brandValue('name', 'Noor Guide');
+        } else {
+            nameText = brandValue('name', 'Noor Guide');
         }
+        var np = nameText.split(/ (.*)/s);
+        var nameFirst = np[0] || '';
+        var nameRest = np[1] !== undefined ? np[1] : '';
+
+        var mainColor = brandValue('color', '#1A1A2E');
+        var accentColor = brandValue('accent', '#FF6B00');
+        var fontFamily = brandValue('font', '');
+        var fontSize = brandValue('size', '');
+        var bold = brandValue('bold', 1);
+        var italic = brandValue('italic', 0);
+        var underline = brandValue('underline', 0);
+
+        var fontOptions = [
+            ['', 'Police par défaut'],
+            ['"Playfair Display", serif', 'Playfair Display'],
+            ['Georgia, serif', 'Georgia'],
+            ['"Times New Roman", serif', 'Times New Roman'],
+            ['Arial, sans-serif', 'Arial'],
+            ['Verdana, sans-serif', 'Verdana'],
+            ['"Trebuchet MS", sans-serif', 'Trebuchet MS'],
+            ['"Courier New", monospace', 'Courier New']
+        ].map(function (f) {
+            return '<option value="' + esc(f[0]) + '"' + (fontFamily === f[0] ? ' selected' : '') + '>' + esc(f[1]) + '</option>';
+        }).join('');
+
+        var sizeOptions = [
+            ['', 'Taille par défaut'],
+            ['1rem', 'Petit'],
+            ['1.3rem', 'Moyen'],
+            ['1.5rem', 'Grand'],
+            ['1.8rem', 'Très grand'],
+            ['2.1rem', 'Énorme']
+        ].map(function (s) {
+            return '<option value="' + esc(s[0]) + '"' + (fontSize === s[0] ? ' selected' : '') + '>' + esc(s[1]) + '</option>';
+        }).join('');
 
         var overlay = openModal('');
         var box = overlay.firstChild;
@@ -277,21 +295,47 @@
         var body = document.createElement('div');
         body.style.cssText = 'padding:1.4rem 1.25rem 0;';
         body.innerHTML =
-            '<h3 style="margin:0 0 1rem;font-size:1.15rem;color:#1A1A2E;">Couleurs du logo</h3>' +
+            '<h3 style="margin:0 0 1rem;font-size:1.15rem;color:#1A1A2E;">Style du logo</h3>' +
+            '<label style="display:block;font-size:0.85rem;font-weight:600;color:#555;margin-bottom:0.3rem;">Nom du site</label>' +
+            '<input type="text" data-ie-brand-name value="' + esc(nameText) + '" style="width:100%;padding:0.55rem 0.8rem;border:1px solid #d0d0e0;border-radius:8px;margin-bottom:1rem;font-size:0.95rem;">' +
             '<div style="display:flex;gap:1rem;margin-bottom:1rem;">' +
                 '<div style="flex:1;">' +
                     '<label style="display:block;font-size:0.85rem;font-weight:600;color:#555;margin-bottom:0.3rem;">Texte principal</label>' +
-                    '<input type="color" data-ie-color-main value="' + esc(currentMain) + '" style="width:100%;height:44px;border:1px solid #d0d0e0;border-radius:8px;cursor:pointer;">' +
+                    '<input type="color" data-ie-color-main value="' + esc(mainColor) + '" style="width:100%;height:44px;border:1px solid #d0d0e0;border-radius:8px;cursor:pointer;">' +
                 '</div>' +
                 '<div style="flex:1;">' +
                     '<label style="display:block;font-size:0.85rem;font-weight:600;color:#555;margin-bottom:0.3rem;">Accent (2ᵉ mot)</label>' +
-                    '<input type="color" data-ie-color-accent value="' + esc(currentAccent) + '" style="width:100%;height:44px;border:1px solid #d0d0e0;border-radius:8px;cursor:pointer;">' +
+                    '<input type="color" data-ie-color-accent value="' + esc(accentColor) + '" style="width:100%;height:44px;border:1px solid #d0d0e0;border-radius:8px;cursor:pointer;">' +
                 '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:1rem;margin-bottom:1rem;">' +
+                '<div style="flex:1;">' +
+                    '<label style="display:block;font-size:0.85rem;font-weight:600;color:#555;margin-bottom:0.3rem;">Police</label>' +
+                    '<select data-ie-font style="width:100%;padding:0.55rem 0.8rem;border:1px solid #d0d0e0;border-radius:8px;font-size:0.95rem;">' + fontOptions + '</select>' +
+                '</div>' +
+                '<div style="flex:1;">' +
+                    '<label style="display:block;font-size:0.85rem;font-weight:600;color:#555;margin-bottom:0.3rem;">Taille</label>' +
+                    '<select data-ie-size style="width:100%;padding:0.55rem 0.8rem;border:1px solid #d0d0e0;border-radius:8px;font-size:0.95rem;">' + sizeOptions + '</select>' +
+                '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:1.5rem;margin-bottom:1rem;">' +
+                '<label style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;color:#555;cursor:pointer;">' +
+                    '<input type="checkbox" data-ie-bold' + (bold ? ' checked' : '') + '> Gras</label>' +
+                '<label style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;color:#555;cursor:pointer;">' +
+                    '<input type="checkbox" data-ie-italic' + (italic ? ' checked' : '') + '> Italique</label>' +
+                '<label style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;color:#555;cursor:pointer;">' +
+                    '<input type="checkbox" data-ie-underline' + (underline ? ' checked' : '') + '> Souligné</label>' +
             '</div>' +
             '<p data-ie-msg style="margin:0 0 1rem;font-size:0.85rem;color:#c0392b;display:none;"></p>';
 
         var mainInput = body.querySelector('[data-ie-color-main]');
         var accentInput = body.querySelector('[data-ie-color-accent]');
+        var fontInput = body.querySelector('[data-ie-font]');
+        var sizeInput = body.querySelector('[data-ie-size]');
+        var boldInput = body.querySelector('[data-ie-bold]');
+        var italicInput = body.querySelector('[data-ie-italic]');
+        var underlineInput = body.querySelector('[data-ie-underline]');
+        var nameInput = body.querySelector('[data-ie-brand-name]');
         var msg = body.querySelector('[data-ie-msg]');
 
         box.appendChild(body);
@@ -299,24 +343,50 @@
             msg.style.display = 'none';
             var mainVal = mainInput.value || '#1A1A2E';
             var accentVal = accentInput.value || '#FF6B00';
+            var fontVal = fontInput.value || '';
+            var sizeVal = sizeInput.value || '';
+            var boldVal = boldInput.checked ? '1' : '0';
+            var italicVal = italicInput.checked ? '1' : '0';
+            var underlineVal = underlineInput.checked ? '1' : '0';
+            var newName = nameInput.value.replace(/\s+/g, ' ').trim() || nameText;
 
-            Promise.all([
-                fetch(baseUrl + 'includes/inline_edit_setting.php', {
+            var jobs = [
+                ['site_name', newName],
+                ['site_name_color', mainVal],
+                ['site_name_color_accent', accentVal],
+                ['site_name_font_family', fontVal],
+                ['site_name_font_size', sizeVal],
+                ['site_name_bold', boldVal],
+                ['site_name_italic', italicVal],
+                ['site_name_underline', underlineVal]
+            ];
+
+            Promise.all(jobs.map(function (j) {
+                return fetch(baseUrl + 'includes/inline_edit_setting.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ csrf_token: csrfToken, key: 'site_name_color', value: mainVal })
-                }).then(function (r) { return r.json(); }),
-                fetch(baseUrl + 'includes/inline_edit_setting.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ csrf_token: csrfToken, key: 'site_name_color_accent', value: accentVal })
-                }).then(function (r) { return r.json(); })
-            ])
+                    body: JSON.stringify({ csrf_token: csrfToken, key: j[0], value: j[1] })
+                }).then(function (r) { return r.json(); });
+            }))
             .then(function (results) {
                 var ok = results.every(function (d) { return d.success; });
                 if (ok) {
+                    var np2 = newName.split(/ (.*)/s);
+                    var nFirst = np2[0] || '';
+                    var nRest = np2[1] !== undefined ? np2[1] : '';
+                    window.__ieBrand = {
+                        color: mainVal,
+                        accent: accentVal,
+                        font: fontVal,
+                        size: sizeVal,
+                        bold: boldVal === '1',
+                        italic: italicVal === '1',
+                        underline: underlineVal === '1',
+                        nameFirst: nFirst,
+                        nameRest: nRest
+                    };
+                    applyBrandStyles(window.__ieBrand);
                     closeModal(overlay);
-                    window.location.reload();
                 } else {
                     msg.textContent = 'Erreur lors de l\'enregistrement.';
                     msg.style.display = 'block';
@@ -338,7 +408,18 @@
         el.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            openColorEditor(el);
+            openBrandEditor();
+        });
+    });
+
+    /* Cliquer sur le texte du logo ouvre l'éditeur de style (admin) */
+    document.querySelectorAll('[data-ie-setting="site_name"]').forEach(function (el) {
+        el.classList.add('ie-field');
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openBrandEditor();
         });
     });
 

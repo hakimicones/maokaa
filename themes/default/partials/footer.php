@@ -9,6 +9,17 @@ $siteName = str_replace("\xC2\xA0", ' ', html_entity_decode($siteName, ENT_QUOTE
 $siteLogo = get_setting($pdo, 'site_logo', '');
 $nameColor = get_setting($pdo, 'site_name_color', '#1A1A2E');
 $accentColor = get_setting($pdo, 'site_name_color_accent', '#FF6B00');
+$brandFont = get_setting($pdo, 'site_name_font_family', '');
+$brandSize = get_setting($pdo, 'site_name_font_size', '');
+$brandBold = get_setting($pdo, 'site_name_bold', '1');
+$brandItalic = get_setting($pdo, 'site_name_italic', '0');
+$brandUnderline = get_setting($pdo, 'site_name_underline', '0');
+$brandStyle = 'color:' . $nameColor . ';'
+    . ($brandFont !== '' ? 'font-family:' . $brandFont . ';' : '')
+    . ($brandSize !== '' ? 'font-size:' . $brandSize . ';' : '')
+    . 'font-weight:' . ($brandBold === '1' ? '700' : '400') . ';'
+    . 'font-style:' . ($brandItalic === '1' ? 'italic' : 'normal') . ';'
+    . 'text-decoration:' . ($brandUnderline === '1' ? 'underline' : 'none') . ';';
 $siteInitial = function_exists('mb_substr') ? mb_substr(trim($siteName), 0, 1) : substr(trim($siteName), 0, 1);
 $nameParts = explode(' ', trim($siteName), 2);
 
@@ -40,7 +51,7 @@ if (!is_array($footerColumns) || empty($footerColumns)) {
                     <?php else: ?>
                         <span data-ie-logo class="d-inline-flex align-items-center justify-content-center rounded" style="width:40px;height:40px;background:#FF6B00;color:#fff;font-weight:900;font-size:1rem;border-radius:12px;"><?php echo htmlspecialchars($siteInitial); ?></span>
                     <?php endif; ?>
-                    <span data-ie-setting="site_name" style="color:<?php echo htmlspecialchars($nameColor, ENT_QUOTES, 'UTF-8'); ?>;"><?php echo htmlspecialchars($nameParts[0]); ?><?php if (isset($nameParts[1]) && $nameParts[1] !== ''): ?><span style="color:<?php echo htmlspecialchars($accentColor, ENT_QUOTES, 'UTF-8'); ?>;"> <?php echo htmlspecialchars($nameParts[1]); ?></span><?php endif; ?></span>
+                    <span data-ie-setting="site_name" style="<?php echo htmlspecialchars($brandStyle, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($nameParts[0]); ?><?php if (isset($nameParts[1]) && $nameParts[1] !== ''): ?><span style="color:<?php echo htmlspecialchars($accentColor, ENT_QUOTES, 'UTF-8'); ?>;"> <?php echo htmlspecialchars($nameParts[1]); ?></span><?php endif; ?></span>
                     <?php if ($footerAdmin): ?>
                     <span data-ie-color-edit class="ie-color-btn" title="Changer les couleurs du logo" aria-label="Changer les couleurs du logo" role="button" tabindex="0">
                         <i class="fas fa-palette"></i>

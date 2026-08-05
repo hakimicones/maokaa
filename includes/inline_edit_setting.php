@@ -34,7 +34,7 @@ if (!verifyCSRFToken($csrf)) {
     exit;
 }
 
-$allowed_keys = ['site_name', 'site_name_color', 'site_name_color_accent', 'footer_phone', 'footer_email', 'footer_address', 'footer_description', 'footer_copyright', 'footer_columns'];
+$allowed_keys = ['site_name', 'site_name_color', 'site_name_color_accent', 'site_name_font_family', 'site_name_font_size', 'site_name_bold', 'site_name_italic', 'site_name_underline', 'footer_phone', 'footer_email', 'footer_address', 'footer_description', 'footer_copyright', 'footer_columns'];
 $key = $input['key'] ?? '';
 if (!in_array($key, $allowed_keys, true)) {
     http_response_code(400);
