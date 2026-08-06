@@ -23,6 +23,16 @@ $brandStyle = 'color:' . $nameColor . ';'
 $siteInitial = function_exists('mb_substr') ? mb_substr(trim($siteName), 0, 1) : substr(trim($siteName), 0, 1);
 $nameParts = explode(' ', trim($siteName), 2);
 
+$brandHtml = get_setting($pdo, 'site_name_html', '');
+if ($brandHtml !== '') {
+    $brandInner = sanitize_brand_html($brandHtml);
+} else {
+    $brandInner = htmlspecialchars($nameParts[0], ENT_QUOTES, 'UTF-8');
+    if (isset($nameParts[1]) && $nameParts[1] !== '') {
+        $brandInner .= ' <span style="color:' . htmlspecialchars($accentColor, ENT_QUOTES, 'UTF-8') . ';">' . htmlspecialchars($nameParts[1], ENT_QUOTES, 'UTF-8') . '</span>';
+    }
+}
+
 $footerColumns = json_decode(get_setting($pdo, 'footer_columns', ''), true);
 if (!is_array($footerColumns) || empty($footerColumns)) {
     $footerColumns = [
@@ -51,7 +61,7 @@ if (!is_array($footerColumns) || empty($footerColumns)) {
                     <?php else: ?>
                         <span data-ie-logo class="d-inline-flex align-items-center justify-content-center rounded" style="width:40px;height:40px;background:#FF6B00;color:#fff;font-weight:900;font-size:1rem;border-radius:12px;"><?php echo htmlspecialchars($siteInitial); ?></span>
                     <?php endif; ?>
-                    <span data-ie-setting="site_name" style="<?php echo htmlspecialchars($brandStyle, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($nameParts[0]); ?><?php if (isset($nameParts[1]) && $nameParts[1] !== ''): ?><span style="color:<?php echo htmlspecialchars($accentColor, ENT_QUOTES, 'UTF-8'); ?>;"> <?php echo htmlspecialchars($nameParts[1]); ?></span><?php endif; ?></span>
+                    <span data-ie-setting="site_name" style="<?php echo htmlspecialchars($brandStyle, ENT_QUOTES, 'UTF-8'); ?>"><?php echo $brandInner; ?></span>
                     <?php if ($footerAdmin): ?>
                     <span data-ie-color-edit class="ie-color-btn" title="Changer les couleurs du logo" aria-label="Changer les couleurs du logo" role="button" tabindex="0">
                         <i class="fas fa-palette"></i>

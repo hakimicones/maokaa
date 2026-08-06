@@ -239,8 +239,12 @@
             style += 'font-style:' + (b.italic ? 'italic' : 'normal') + ';';
             style += 'text-decoration:' + (b.underline ? 'underline' : 'none') + ';';
             el.setAttribute('style', style);
-            el.innerHTML = esc(b.nameFirst) +
-                (b.nameRest !== '' ? ' <span style="color:' + b.accent + ';">' + esc(b.nameRest) + '</span>' : '');
+            if (b.html && b.html !== '') {
+                el.innerHTML = b.html;
+            } else {
+                el.innerHTML = esc(b.nameFirst) +
+                    (b.nameRest !== '' ? ' <span style="color:' + b.accent + ';">' + esc(b.nameRest) + '</span>' : '');
+            }
         });
     }
 
@@ -259,6 +263,7 @@
 
         var mainColor = brandValue('color', '#1A1A2E');
         var accentColor = brandValue('accent', '#FF6B00');
+        var brandHtml = brandValue('html', '');
         var fontFamily = brandValue('font', '');
         var fontSize = brandValue('size', '');
         var bold = brandValue('bold', 1);
@@ -295,65 +300,107 @@
         var body = document.createElement('div');
         body.style.cssText = 'padding:1.4rem 1.25rem 0;';
         body.innerHTML =
-            '<h3 style="margin:0 0 1rem;font-size:1.15rem;color:#1A1A2E;">Style du logo</h3>' +
-            '<label style="display:block;font-size:0.85rem;font-weight:600;color:#555;margin-bottom:0.3rem;">Nom du site</label>' +
-            '<input type="text" data-ie-brand-name value="' + esc(nameText) + '" style="width:100%;padding:0.55rem 0.8rem;border:1px solid #d0d0e0;border-radius:8px;margin-bottom:1rem;font-size:0.95rem;">' +
-            '<div style="display:flex;gap:1rem;margin-bottom:1rem;">' +
-                '<div style="flex:1;">' +
-                    '<label style="display:block;font-size:0.85rem;font-weight:600;color:#555;margin-bottom:0.3rem;">Texte principal</label>' +
-                    '<input type="color" data-ie-color-main value="' + esc(mainColor) + '" style="width:100%;height:44px;border:1px solid #d0d0e0;border-radius:8px;cursor:pointer;">' +
-                '</div>' +
-                '<div style="flex:1;">' +
-                    '<label style="display:block;font-size:0.85rem;font-weight:600;color:#555;margin-bottom:0.3rem;">Accent (2ᵉ mot)</label>' +
-                    '<input type="color" data-ie-color-accent value="' + esc(accentColor) + '" style="width:100%;height:44px;border:1px solid #d0d0e0;border-radius:8px;cursor:pointer;">' +
-                '</div>' +
+            '<h3 style="margin:0 0 0.9rem;font-size:1.05rem;color:#1A1A2E;">Éditeur du logo</h3>' +
+            /* Barre d'outils compacte */
+            '<div style="display:flex;align-items:center;gap:0.35rem;border:1px solid #d0d0e0;border-radius:10px;padding:0.4rem 0.5rem;margin-bottom:0.7rem;background:#fff;flex-wrap:wrap;">' +
+                '<button type="button" data-ie-tool="bold" title="Gras" style="width:32px;height:30px;border:1px solid transparent;background:' + (bold ? '#FF6B00' : '#fff') + ';color:' + (bold ? '#fff' : '#333') + ';border-radius:6px;font-weight:700;cursor:pointer;">B</button>' +
+                '<button type="button" data-ie-tool="italic" title="Italique" style="width:32px;height:30px;border:1px solid transparent;background:' + (italic ? '#FF6B00' : '#fff') + ';color:' + (italic ? '#fff' : '#333') + ';border-radius:6px;font-style:italic;font-weight:700;cursor:pointer;">I</button>' +
+                '<button type="button" data-ie-tool="underline" title="Souligné" style="width:32px;height:30px;border:1px solid transparent;background:' + (underline ? '#FF6B00' : '#fff') + ';color:' + (underline ? '#fff' : '#333') + ';border-radius:6px;text-decoration:underline;font-weight:700;cursor:pointer;">U</button>' +
+                '<span style="width:1px;height:20px;background:#e0e0ee;margin:0 0.15rem;"></span>' +
+                '<input type="color" data-ie-color-main value="' + esc(mainColor) + '" title="Couleur du texte" style="width:34px;height:30px;border:1px solid #d0d0e0;border-radius:6px;cursor:pointer;padding:0;background:#fff;">' +
+                '<span style="width:1px;height:20px;background:#e0e0ee;margin:0 0.15rem;"></span>' +
+                '<select data-ie-font title="Police" style="max-width:120px;padding:0.25rem 0.3rem;border:1px solid #d0d0e0;border-radius:6px;font-size:0.8rem;">' + fontOptions + '</select>' +
+                '<select data-ie-size title="Taille" style="max-width:80px;padding:0.25rem 0.3rem;border:1px solid #d0d0e0;border-radius:6px;font-size:0.8rem;">' + sizeOptions + '</select>' +
             '</div>' +
-            '<div style="display:flex;gap:1rem;margin-bottom:1rem;">' +
-                '<div style="flex:1;">' +
-                    '<label style="display:block;font-size:0.85rem;font-weight:600;color:#555;margin-bottom:0.3rem;">Police</label>' +
-                    '<select data-ie-font style="width:100%;padding:0.55rem 0.8rem;border:1px solid #d0d0e0;border-radius:8px;font-size:0.95rem;">' + fontOptions + '</select>' +
-                '</div>' +
-                '<div style="flex:1;">' +
-                    '<label style="display:block;font-size:0.85rem;font-weight:600;color:#555;margin-bottom:0.3rem;">Taille</label>' +
-                    '<select data-ie-size style="width:100%;padding:0.55rem 0.8rem;border:1px solid #d0d0e0;border-radius:8px;font-size:0.95rem;">' + sizeOptions + '</select>' +
-                '</div>' +
-            '</div>' +
-            '<div style="display:flex;gap:1.5rem;margin-bottom:1rem;">' +
-                '<label style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;color:#555;cursor:pointer;">' +
-                    '<input type="checkbox" data-ie-bold' + (bold ? ' checked' : '') + '> Gras</label>' +
-                '<label style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;color:#555;cursor:pointer;">' +
-                    '<input type="checkbox" data-ie-italic' + (italic ? ' checked' : '') + '> Italique</label>' +
-                '<label style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;color:#555;cursor:pointer;">' +
-                    '<input type="checkbox" data-ie-underline' + (underline ? ' checked' : '') + '> Souligné</label>' +
-            '</div>' +
-            '<p data-ie-msg style="margin:0 0 1rem;font-size:0.85rem;color:#c0392b;display:none;"></p>';
+            /* Zone de texte éditée en direct (WYSIWYG) */
+            '<div data-ie-brand-name contenteditable="true" spellcheck="false" style="border:1px dashed #d0d0e0;border-radius:10px;padding:0.8rem 1rem;background:#fafafe;text-align:center;min-height:56px;outline:none;line-height:1.4;"></div>' +
+            '<p data-ie-msg style="margin:0.8rem 0 1rem;font-size:0.85rem;color:#c0392b;display:none;"></p>';
 
+        var brandArea = body.querySelector('[data-ie-brand-name]');
         var mainInput = body.querySelector('[data-ie-color-main]');
-        var accentInput = body.querySelector('[data-ie-color-accent]');
         var fontInput = body.querySelector('[data-ie-font]');
         var sizeInput = body.querySelector('[data-ie-size]');
-        var boldInput = body.querySelector('[data-ie-bold]');
-        var italicInput = body.querySelector('[data-ie-italic]');
-        var underlineInput = body.querySelector('[data-ie-underline]');
-        var nameInput = body.querySelector('[data-ie-brand-name]');
+        var boldInput = body.querySelector('[data-ie-tool="bold"]');
+        var italicInput = body.querySelector('[data-ie-tool="italic"]');
+        var underlineInput = body.querySelector('[data-ie-tool="underline"]');
         var msg = body.querySelector('[data-ie-msg]');
+
+        function isActive(btn) {
+            return btn.style.background === 'rgb(255, 107, 0)' || btn.style.background === '#FF6B00';
+        }
+
+        function renderEditor() {
+            var style = 'color:' + (mainColor || '#1A1A2E') + ';';
+            if (fontInput.value) style += 'font-family:' + fontInput.value + ';';
+            if (sizeInput.value) style += 'font-size:' + sizeInput.value + ';';
+            style += 'font-weight:' + (isActive(boldInput) ? '700' : '400') + ';';
+            style += 'font-style:' + (isActive(italicInput) ? 'italic' : 'normal') + ';';
+            style += 'text-decoration:' + (isActive(underlineInput) ? 'underline' : 'none') + ';';
+            brandArea.setAttribute('style', 'border:1px dashed #d0d0e0;border-radius:10px;padding:0.8rem 1rem;background:#fafafe;text-align:center;min-height:56px;outline:none;line-height:1.4;' + style);
+        }
+
+        /* Applique la couleur uniquement au(x) mot(s) sélectionné(s) dans la zone. */
+        function applyColorToSelection(color) {
+            var sel = window.getSelection();
+            if (!sel) return;
+            var hasSelection = !sel.isCollapsed && brandArea.contains(sel.anchorNode);
+            if (hasSelection) {
+                document.execCommand('foreColor', false, color);
+            } else {
+                /* Aucune sélection : appliquer à tout le texte */
+                var range = document.createRange();
+                range.selectNodeContents(brandArea);
+                sel.removeAllRanges();
+                sel.addRange(range);
+                document.execCommand('foreColor', false, color);
+                sel.removeAllRanges();
+            }
+        }
+
+        function setTool(btn, on) {
+            btn.style.background = on ? '#FF6B00' : '#fff';
+            btn.style.color = on ? '#fff' : '#333';
+        }
+
+        setTool(boldInput, bold);
+        setTool(italicInput, italic);
+        setTool(underlineInput, underline);
+
+        boldInput.addEventListener('click', function () { setTool(boldInput, !isActive(boldInput)); renderEditor(); });
+        italicInput.addEventListener('click', function () { setTool(italicInput, !isActive(italicInput)); renderEditor(); });
+        underlineInput.addEventListener('click', function () { setTool(underlineInput, !isActive(underlineInput)); renderEditor(); });
+        mainInput.addEventListener('input', function () { applyColorToSelection(mainInput.value); renderEditor(); });
+        fontInput.addEventListener('change', renderEditor);
+        sizeInput.addEventListener('change', renderEditor);
+
+        if (brandHtml !== '') {
+            brandArea.innerHTML = brandHtml;
+        } else {
+            brandArea.textContent = nameText;
+        }
+        renderEditor();
 
         box.appendChild(body);
         box.appendChild(modalButtons(overlay, function () {
             msg.style.display = 'none';
-            var mainVal = mainInput.value || '#1A1A2E';
-            var accentVal = accentInput.value || '#FF6B00';
+            var newName = brandArea.textContent.replace(/\s+/g, ' ').trim() || nameText;
+            /* La couleur de base ne change pas : la pipette colore uniquement la sélection */
+            var mainVal = mainColor || '#1A1A2E';
             var fontVal = fontInput.value || '';
             var sizeVal = sizeInput.value || '';
-            var boldVal = boldInput.checked ? '1' : '0';
-            var italicVal = italicInput.checked ? '1' : '0';
-            var underlineVal = underlineInput.checked ? '1' : '0';
-            var newName = nameInput.value.replace(/\s+/g, ' ').trim() || nameText;
+            var boldVal = isActive(boldInput) ? '1' : '0';
+            var italicVal = isActive(italicInput) ? '1' : '0';
+            var underlineVal = isActive(underlineInput) ? '1' : '0';
+
+            /* HTML riche : gardé uniquement s'il contient des couleurs par mot */
+            var htmlOut = brandArea.innerHTML;
+            var hasColor = /<(?:span|font)[^>]*\bcolor\s*[:=]/i.test(htmlOut);
+            var htmlVal = hasColor ? htmlOut : '';
 
             var jobs = [
                 ['site_name', newName],
+                ['site_name_html', htmlVal],
                 ['site_name_color', mainVal],
-                ['site_name_color_accent', accentVal],
                 ['site_name_font_family', fontVal],
                 ['site_name_font_size', sizeVal],
                 ['site_name_bold', boldVal],
@@ -376,14 +423,15 @@
                     var nRest = np2[1] !== undefined ? np2[1] : '';
                     window.__ieBrand = {
                         color: mainVal,
-                        accent: accentVal,
+                        accent: brandValue('accent', '#FF6B00'),
                         font: fontVal,
                         size: sizeVal,
                         bold: boldVal === '1',
                         italic: italicVal === '1',
                         underline: underlineVal === '1',
                         nameFirst: nFirst,
-                        nameRest: nRest
+                        nameRest: nRest,
+                        html: htmlVal
                     };
                     applyBrandStyles(window.__ieBrand);
                     closeModal(overlay);

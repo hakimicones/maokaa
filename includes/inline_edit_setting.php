@@ -34,7 +34,7 @@ if (!verifyCSRFToken($csrf)) {
     exit;
 }
 
-$allowed_keys = ['site_name', 'site_name_color', 'site_name_color_accent', 'site_name_font_family', 'site_name_font_size', 'site_name_bold', 'site_name_italic', 'site_name_underline', 'footer_phone', 'footer_email', 'footer_address', 'footer_description', 'footer_copyright', 'footer_columns'];
+$allowed_keys = ['site_name', 'site_name_html', 'site_name_color', 'site_name_color_accent', 'site_name_font_family', 'site_name_font_size', 'site_name_bold', 'site_name_italic', 'site_name_underline', 'footer_phone', 'footer_email', 'footer_address', 'footer_description', 'footer_copyright', 'footer_columns'];
 $key = $input['key'] ?? '';
 if (!in_array($key, $allowed_keys, true)) {
     http_response_code(400);
@@ -42,11 +42,16 @@ if (!in_array($key, $allowed_keys, true)) {
     exit;
 }
 
-$value = strip_tags($input['value'] ?? '');
-$value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-// Remplacer les espaces insécables (&nbsp;) par des espaces normales
-$value = str_replace("\xC2\xA0", ' ', $value);
-$value = trim($value);
+// site_name_html : HTML riche (couleurs par mot), nettoyé via sanitize_brand_html
+if ($key === 'site_name_html') {
+    $value = sanitize_brand_html((string)($input['value'] ?? ''));
+} else {
+    $value = strip_tags($input['value'] ?? '');
+    $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    // Remplacer les espaces insécables (&nbsp;) par des espaces normales
+    $value = str_replace("\xC2\xA0", ' ', $value);
+    $value = trim($value);
+}
 
 try {
     set_setting($pdo, $key, $value);
