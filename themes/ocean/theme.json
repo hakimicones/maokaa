@@ -1,0 +1,7 @@
+{
+  "name": "Ocean",
+  "version": "1.0.0",
+  "description": "Thème Ocean : palette turquoise et marine",
+  "author": "Maokaa",
+  "templates": ["home", "default", "page", "listing", "products", "news", "solutions"]
+}

@@ -1,0 +1,7 @@
+{
+  "name": "Violet",
+  "version": "1.0.0",
+  "description": "Thème Violet : palette violette et nuit",
+  "author": "Maokaa",
+  "templates": ["home", "default", "page", "listing", "products", "news", "solutions"]
+}

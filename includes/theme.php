@@ -72,7 +72,9 @@ class ThemeManager
                 'active'  => ($folder === self::$active),
                 'preview' => is_file(dirname($file) . '/preview.png')
                     ? BASE_URL . 'themes/' . $folder . '/preview.png'
-                    : null,
+                    : (is_file(dirname($file) . '/preview.svg')
+                        ? BASE_URL . 'themes/' . $folder . '/preview.svg'
+                        : null),
             ]);
         }
         return $themes;
@@ -89,6 +91,32 @@ class ThemeManager
         }
         sort($templates);
         return $templates;
+    }
+
+    /**
+     * Vérifie la structure d'un thème installé.
+     * Retourne la liste des éléments manquants (chemins relatifs, parents inclus).
+     * Ex. : ["templates/", "assets/css/theme.css"]
+     */
+    public static function structureIssues(string $folder): array
+    {
+        $root = self::$root . $folder . '/';
+        $missing = [];
+
+        if (!is_dir($root . 'templates')) $missing[] = 'templates/';
+        if (!is_dir($root . 'partials'))   $missing[] = 'partials/';
+        if (!is_dir($root . 'assets')) {
+            $missing[] = 'assets/';
+        } else {
+            if (!is_dir($root . 'assets/css')) {
+                $missing[] = 'assets/css/';
+            } elseif (!is_file($root . 'assets/css/theme.css')) {
+                $missing[] = 'assets/css/theme.css';
+            }
+            if (!is_dir($root . 'assets/js')) $missing[] = 'assets/js/';
+        }
+
+        return $missing;
     }
 }
 

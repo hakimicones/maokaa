@@ -1,0 +1,7 @@
+{
+  "name": "Rose",
+  "version": "1.0.0",
+  "description": "Thème Rose : palette rose et prune (test : partials/ et assets/js/ manquants)",
+  "author": "Maokaa",
+  "templates": ["home", "default", "page", "listing", "products", "news", "solutions"]
+}

@@ -8,12 +8,18 @@ require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/modules.php';
 require_once __DIR__ . '/../includes/settings_helpers.php';
 require_once __DIR__ . '/../includes/upload.php';
+require_once __DIR__ . '/../includes/theme.php';
+require_once __DIR__ . '/../includes/unzip.php';
+require_once __DIR__ . '/../includes/theme_preview.php';
 
 // Vérifier l'authentification
 requirePasswordChange();
 
 // Initialiser les modules
 ModuleRegistry::init($pdo);
+
+// Initialiser le gestionnaire de thèmes
+ThemeManager::init($pdo);
 
 // Charger les modèles
 require_once __DIR__ . '/../app/models/Product.php';
@@ -200,6 +206,158 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         setFlash('success', 'Réglages enregistrés avec succès');
         logAudit('save_settings', 'Réglages du site modifiés');
+        break;
+
+    case 'activate_theme':
+        if (!hasRole('admin')) {
+            setFlash('error', 'Accès interdit. Droits admin requis.');
+            break;
+        }
+        $folder = trim($_POST['theme_folder'] ?? '');
+        if (!preg_match('/^[a-z0-9_-]+$/', $folder)) {
+            setFlash('error', 'Nom de thème invalide.');
+            break;
+        }
+        if (ThemeManager::setActive($pdo, $folder)) {
+            setFlash('success', 'Thème « ' . $folder . ' » activé.');
+            logAudit('activate_theme', "Thème '{$folder}' activé");
+        } else {
+            setFlash('error', 'Impossible d\'activer ce thème.');
+        }
+        break;
+
+    case 'upload_theme':
+        if (!hasRole('admin')) {
+            setFlash('error', 'Accès interdit. Droits admin requis.');
+            break;
+        }
+        $themeDir = dirname(__DIR__) . '/themes/';
+        $file = $_FILES['theme_zip'] ?? null;
+        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+            setFlash('error', 'Aucun fichier ZIP reçu ou erreur d\'upload.');
+            break;
+        }
+        if ($file['size'] > 10 * 1024 * 1024) {
+            setFlash('error', 'Le fichier ZIP ne doit pas dépasser 10 Mo.');
+            break;
+        }
+        // Vérifier les magic bytes d'un ZIP (PK\x03\x04)
+        $head = @file_get_contents($file['tmp_name'], false, null, 0, 4);
+        if ($head === false || substr($head, 0, 4) !== "PK\x03\x04") {
+            setFlash('error', 'Le fichier doit être une archive ZIP valide.');
+            break;
+        }
+
+        // 1. Extraction dans un dossier temporaire (staging)
+        $staging = $themeDir . '.staging_' . uniqid();
+        $res = zip_extract($file['tmp_name'], $staging);
+        if (!$res['ok']) {
+            rrmdir($staging);
+            setFlash('error', 'Extraction impossible : ' . $res['error']);
+            break;
+        }
+
+        // 2. Localiser theme.json : à la racine du ZIP ou dans un unique sous-dossier
+        $themeJson       = $staging . '/theme.json';
+        $themeContentDir = $staging;
+        if (!is_file($themeJson)) {
+            $subs = array_diff(scandir($staging) ?: [], ['.', '..']);
+            if (count($subs) === 1 && is_dir($staging . '/' . reset($subs))) {
+                $sub = $staging . '/' . reset($subs);
+                if (is_file($sub . '/theme.json')) {
+                    $themeJson       = $sub . '/theme.json';
+                    $themeContentDir = $sub;
+                }
+            }
+        }
+        if (!is_file($themeJson)) {
+            rrmdir($staging);
+            setFlash('error', 'Thème invalide : le fichier theme.json est requis à la racine du ZIP.');
+            break;
+        }
+        // Retirer un éventuel BOM UTF-8 avant json_decode
+        $metaRaw = file_get_contents($themeJson);
+        $metaRaw = ltrim($metaRaw, "\xEF\xBB\xBF");
+        $meta = json_decode($metaRaw, true);
+        if (!is_array($meta) || empty($meta['name'])) {
+            rrmdir($staging);
+            setFlash('error', 'Thème invalide : theme.json doit être un JSON valide avec un champ "name".');
+            break;
+        }
+
+        // 3. Nom du dossier : saisi par l'utilisateur OU dérivé du champ name
+        $folder = strtolower(trim($_POST['theme_folder'] ?? ''));
+        $folder = preg_replace('/[^a-z0-9_-]+/', '-', $folder);
+        $folder = trim($folder, '-');
+        if ($folder === '') {
+            $folder = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $meta['name']), '-'));
+        }
+        if ($folder === '' || $folder === 'default') {
+            rrmdir($staging);
+            setFlash('error', 'Nom de dossier invalide pour le thème.');
+            break;
+        }
+        if (is_dir($themeDir . $folder)) {
+            rrmdir($staging);
+            setFlash('error', 'Un thème nommé « ' . $folder . ' » existe déjà. Choisissez un autre nom.');
+            break;
+        }
+
+        // 4. Déplacer le contenu du thème vers themes/<dossier>
+        $dest = $themeDir . $folder;
+        if (!@rename($themeContentDir, $dest)) {
+            rrmdir($staging);
+            setFlash('error', 'Impossible d\'enregistrer le thème.');
+            break;
+        }
+        rrmdir($staging);
+
+        // 5. Générer l'aperçu visuel (preview.svg) à partir de theme.css
+        theme_preview_write($dest);
+
+        // 6. Contrôle de structure : lister les éléments manquants du ZIP
+        $missing = ThemeManager::structureIssues($folder);
+        $warning = '';
+        if ($missing) {
+            $warning = ' Attention : éléments manquants dans le ZIP — ' . implode(', ', $missing)
+                . '. Ces fichiers manquants retombent automatiquement sur le thème default.';
+        }
+
+        // 7. Activation automatique (met à jour active_theme dans settings)
+        if (ThemeManager::setActive($pdo, $folder)) {
+            setFlash('success', 'Thème « ' . htmlspecialchars($meta['name']) . ' » installé et activé.' . $warning);
+            logAudit('upload_theme', "Thème '{$folder}' installé et activé");
+        } else {
+            setFlash('success', 'Thème « ' . htmlspecialchars($meta['name']) . ' » installé (activation impossible).' . $warning);
+        }
+        break;
+
+    case 'delete_theme':
+        if (!hasRole('admin')) {
+            setFlash('error', 'Accès interdit. Droits admin requis.');
+            break;
+        }
+        $folder = trim($_POST['theme_folder'] ?? '');
+        if (!preg_match('/^[a-z0-9_-]+$/', $folder)) {
+            setFlash('error', 'Nom de thème invalide.');
+            break;
+        }
+        if ($folder === 'default') {
+            setFlash('error', 'Le thème « default » ne peut pas être supprimé.');
+            break;
+        }
+        if ($folder === ThemeManager::getActive()) {
+            setFlash('error', 'Impossible de supprimer le thème actif.');
+            break;
+        }
+        $dir = dirname(__DIR__) . '/themes/' . $folder;
+        if (!is_dir($dir)) {
+            setFlash('error', 'Le thème « ' . $folder . ' » n\'existe pas.');
+            break;
+        }
+        rrmdir($dir);
+        setFlash('success', 'Thème « ' . $folder . ' » supprimé.');
+        logAudit('delete_theme', "Thème '{$folder}' supprimé");
         break;
 
     }
@@ -617,6 +775,14 @@ $csrfToken = generateCSRFToken();
             <li class="nav-item">
                 <a href="menus/index.php" class="nav-link">
                     <i class="fas fa-bars"></i> Menus
+                </a>
+            </li>
+            <?php endif; ?>
+
+            <?php if (hasRole('admin')): ?>
+            <li class="nav-item">
+                <a href="?section=themes" class="nav-link <?php echo $section === 'themes' ? 'active' : ''; ?>">
+                    <i class="fas fa-palette"></i> Thèmes
                 </a>
             </li>
             <?php endif; ?>
@@ -1283,6 +1449,128 @@ $csrfToken = generateCSRFToken();
             <?php endforeach; ?>
         </div>
     </div>
+    <?php endif; ?>
+
+    <?php if (hasRole('admin')): ?>
+    <div class="content-section <?php echo $section === 'themes' ? 'active' : ''; ?>" id="themes">
+        <h3 class="mb-4"><i class="fas fa-palette me-2"></i>Thèmes</h3>
+
+        <div class="row g-4 mb-4">
+            <?php foreach (ThemeManager::list() as $theme):
+                $tActive  = !empty($theme['active']);
+                $tIssues  = ThemeManager::structureIssues($theme['folder']);
+            ?>
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0 <?php echo $tActive ? 'border-primary border-2' : ''; ?>">
+                    <?php if (!empty($theme['preview'])): ?>
+                    <div class="theme-preview-click" data-theme-preview="<?php echo htmlspecialchars($theme['preview']); ?>" style="cursor:pointer;" title="Cliquer pour agrandir l'aperçu">
+                        <img src="<?php echo htmlspecialchars($theme['preview']); ?>" class="card-img-top" alt="Aperçu du thème" style="height:160px;object-fit:cover;width:100%;">
+                    </div>
+                    <?php else: ?>
+                    <div class="bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center" style="height:160px;">
+                        <i class="fas fa-image fa-3x text-muted"></i>
+                    </div>
+                    <?php endif; ?>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <h5 class="card-title mb-0"><?php echo htmlspecialchars($theme['name'] ?? $theme['folder']); ?></h5>
+                            <?php if ($tActive): ?><span class="badge bg-primary">Actif</span><?php endif; ?>
+                        </div>
+                        <p class="text-muted small mb-1"><code><?php echo htmlspecialchars($theme['folder']); ?></code> — v<?php echo htmlspecialchars($theme['version'] ?? '—'); ?></p>
+                        <p class="card-text text-muted small"><?php echo htmlspecialchars($theme['description'] ?? ''); ?></p>
+                        <?php if ($tIssues): ?>
+                        <p class="text-warning small mb-0">
+                            <i class="fas fa-triangle-exclamation me-1"></i>Manquant : <?php echo htmlspecialchars(implode(', ', $tIssues)); ?>
+                        </p>
+                        <?php endif; ?>
+                        <div class="d-flex gap-2 mt-3">
+                            <?php if (!$tActive): ?>
+                            <form method="POST" class="flex-grow-1">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                                <input type="hidden" name="action" value="activate_theme">
+                                <input type="hidden" name="section" value="themes">
+                                <input type="hidden" name="theme_folder" value="<?php echo htmlspecialchars($theme['folder']); ?>">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                    <i class="fas fa-check me-1"></i>Activer
+                                </button>
+                            </form>
+                            <?php endif; ?>
+                            <?php if (!$tActive && $theme['folder'] !== 'default'): ?>
+                            <form method="POST" class="d-inline" onsubmit="return confirm('Supprimer le thème « <?php echo htmlspecialchars($theme['folder']); ?> » ?');">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                                <input type="hidden" name="action" value="delete_theme">
+                                <input type="hidden" name="section" value="themes">
+                                <input type="hidden" name="theme_folder" value="<?php echo htmlspecialchars($theme['folder']); ?>">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Supprimer ce thème">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-file-zipper me-2"></i>Installer un nouveau thème</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                    <input type="hidden" name="action" value="upload_theme">
+                    <input type="hidden" name="section" value="themes">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Archive ZIP du thème</label>
+                            <input type="file" name="theme_zip" class="form-control" accept=".zip,application/zip" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nom du dossier <span class="text-muted">(optionnel)</span></label>
+                            <input type="text" name="theme_folder" class="form-control" placeholder="ex : mon-theme">
+                            <div class="form-text">Si vide, le nom est dérivé du champ « name » de theme.json.</div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">
+                        <i class="fas fa-upload me-1"></i>Installer et activer
+                    </button>
+                    <div class="form-text mt-2">
+                        Le ZIP doit contenir un dossier de thème avec <code>theme.json</code>
+                        (nom, version, description) ainsi que <code>templates/</code>,
+                        <code>partials/</code> et idéalement <code>assets/css/theme.css</code>.
+                        Les fichiers manquants retombent automatiquement sur le thème <strong>default</strong>.
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox : aperçu agrandi d'un thème -->
+    <div class="modal fade" id="themePreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-transparent border-0">
+                <div class="modal-body p-0 text-center position-relative">
+                    <button type="button" class="btn-close btn-close-white position-absolute" style="right:-8px;top:-8px;z-index:5;" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                    <img id="themePreviewImg" src="" class="img-fluid rounded shadow" alt="Aperçu du thème" style="max-height:80vh;background:#fff;">
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function () {
+        var modalEl = document.getElementById('themePreviewModal');
+        if (!modalEl || typeof bootstrap === 'undefined') return;
+        var img = document.getElementById('themePreviewImg');
+        document.querySelectorAll('[data-theme-preview]').forEach(function (el) {
+            el.addEventListener('click', function () {
+                img.src = el.getAttribute('data-theme-preview');
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            });
+        });
+    })();
+    </script>
     <?php endif; ?>
 
     <?php if (hasRole('admin')): ?>
