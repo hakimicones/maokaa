@@ -94,29 +94,34 @@ class ThemeManager
     }
 
     /**
-     * Vérifie la structure d'un thème installé.
-     * Retourne la liste des éléments manquants (chemins relatifs, parents inclus).
-     * Ex. : ["templates/", "assets/css/theme.css"]
+     * Vérifie la structure d'un thème installé à partir du manifeste
+     * includes/theme_structure.json.
+     * Retourne la liste des éléments manquants :
+     * [['path' => 'partials/navbar.php', 'label' => 'Barre de navigation', 'type' => 'obligatoire'], ...]
      */
     public static function structureIssues(string $folder): array
     {
-        $root = self::$root . $folder . '/';
-        $missing = [];
+        $manifestFile = dirname(__DIR__) . '/includes/theme_structure.json';
+        $manifest = is_file($manifestFile)
+            ? (json_decode((string)file_get_contents($manifestFile), true) ?: [])
+            : [];
 
-        if (!is_dir($root . 'templates')) $missing[] = 'templates/';
-        if (!is_dir($root . 'partials'))   $missing[] = 'partials/';
-        if (!is_dir($root . 'assets')) {
-            $missing[] = 'assets/';
-        } else {
-            if (!is_dir($root . 'assets/css')) {
-                $missing[] = 'assets/css/';
-            } elseif (!is_file($root . 'assets/css/theme.css')) {
-                $missing[] = 'assets/css/theme.css';
+        $issues = [];
+        foreach (['obligatoire', 'conseille'] as $type) {
+            foreach ($manifest[$type] ?? [] as $item) {
+                $path = $item['path'] ?? '';
+                if ($path === '') continue;
+                if (!file_exists(self::$root . $folder . '/' . $path)) {
+                    $issues[] = [
+                        'path'  => $path,
+                        'label' => $item['label'] ?? $path,
+                        'type'  => $type,
+                    ];
+                }
             }
-            if (!is_dir($root . 'assets/js')) $missing[] = 'assets/js/';
         }
 
-        return $missing;
+        return $issues;
     }
 }
 

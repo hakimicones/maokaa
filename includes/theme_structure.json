@@ -1,0 +1,20 @@
+{
+  "obligatoire": [
+    { "path": "theme.json", "label": "Fiche du thème (theme.json)" },
+    { "path": "assets/css/theme.css", "label": "Feuille de style principale" },
+    { "path": "partials/navbar.php", "label": "Barre de navigation" },
+    { "path": "partials/footer.php", "label": "Pied de page" },
+    { "path": "templates/home.php", "label": "Gabarit de la page d'accueil" },
+    { "path": "templates/default.php", "label": "Gabarit par défaut" }
+  ],
+  "conseille": [
+    { "path": "templates/page.php", "label": "Gabarit des pages internes" },
+    { "path": "templates/listing.php", "label": "Gabarit des listes" },
+    { "path": "templates/products.php", "label": "Gabarit des produits" },
+    { "path": "templates/news.php", "label": "Gabarit des actualités" },
+    { "path": "templates/solutions.php", "label": "Gabarit des solutions" },
+    { "path": "templates/about.php", "label": "Gabarit « À propos »" },
+    { "path": "assets/js/maokaa.js", "label": "Scripts principaux" },
+    { "path": "assets/js/site-editing.js", "label": "Scripts d'édition inline" }
+  ]
+}

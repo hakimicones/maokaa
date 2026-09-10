@@ -31,6 +31,21 @@ function upload_image(array $file, string $uploadDir, string $prefix = 'img', ?a
     $mime  = $finfo->file($file['tmp_name']);
 
     if (!array_key_exists($mime, $allowedMimes)) {
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $extToMime = array_flip($allowedMimes);
+        if (isset($extToMime[$ext]) || ($ext === 'jpg' && isset($extToMime['jpg']))) {
+            $mime = ($ext === 'jpg') ? 'image/jpeg' : ($extToMime[$ext] ?? $mime);
+        }
+    }
+
+    if (!array_key_exists($mime, $allowedMimes)) {
+        $imgInfo = @getimagesize($file['tmp_name']);
+        if ($imgInfo && isset($imgInfo['mime'])) {
+            $mime = $imgInfo['mime'];
+        }
+    }
+
+    if (!array_key_exists($mime, $allowedMimes)) {
         $formats = implode(', ', array_map('strtoupper', $allowedMimes));
         return ['error' => "Format d'image invalide ($formats requis)"];
     }
@@ -63,6 +78,13 @@ function upload_pdf(array $file, string $uploadDir, string $prefix = 'doc'): arr
 
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $mime  = $finfo->file($file['tmp_name']);
+
+    if ($mime !== 'application/pdf') {
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if ($ext === 'pdf') {
+            $mime = 'application/pdf';
+        }
+    }
 
     if ($mime !== 'application/pdf') {
         return ['error' => 'Seuls les fichiers PDF sont acceptés'];

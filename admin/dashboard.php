@@ -315,12 +315,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // 5. Générer l'aperçu visuel (preview.svg) à partir de theme.css
         theme_preview_write($dest);
 
-        // 6. Contrôle de structure : lister les éléments manquants du ZIP
+        // 6. Contrôle de structure via le manifeste JSON : lister les fichiers manquants
         $missing = ThemeManager::structureIssues($folder);
         $warning = '';
         if ($missing) {
-            $warning = ' Attention : éléments manquants dans le ZIP — ' . implode(', ', $missing)
-                . '. Ces fichiers manquants retombent automatiquement sur le thème default.';
+            $hasRequired = false;
+            $labels = [];
+            foreach ($missing as $m) {
+                if ($m['type'] === 'obligatoire') $hasRequired = true;
+                $labels[] = $m['path'] . ' (' . $m['label'] . ')';
+            }
+            $warning = $hasRequired
+                ? ' Attention : thème INCOMPLET — fichiers indispensables manquants : ' . implode(', ', $labels)
+                : ' Attention : fichiers conseillés manquants : ' . implode(', ', $labels);
+            $warning .= '. Les fichiers manquants retombent automatiquement sur le thème default.';
         }
 
         // 7. Activation automatique (met à jour active_theme dans settings)
@@ -1480,7 +1488,14 @@ $csrfToken = generateCSRFToken();
                         <p class="card-text text-muted small"><?php echo htmlspecialchars($theme['description'] ?? ''); ?></p>
                         <?php if ($tIssues): ?>
                         <p class="text-warning small mb-0">
-                            <i class="fas fa-triangle-exclamation me-1"></i>Manquant : <?php echo htmlspecialchars(implode(', ', $tIssues)); ?>
+                            <i class="fas fa-triangle-exclamation me-1"></i>Manquant :
+                            <?php
+                            $tLabels = [];
+                            foreach ($tIssues as $tM) {
+                                $tLabels[] = $tM['path'] . ($tM['type'] === 'obligatoire' ? ' (indispensable)' : '');
+                            }
+                            echo htmlspecialchars(implode(', ', $tLabels));
+                            ?>
                         </p>
                         <?php endif; ?>
                         <div class="d-flex gap-2 mt-3">
