@@ -149,22 +149,22 @@ if ($step == 2) {
                             <div class="row g-3">
                                 <div class="col-12 col-md-6">
                                     <label>Hôte MySQL</label>
-                                    <input type="text" name="db_host" value="localhost" class="form-control" required>
+                                    <input type="text" name="db_host" value="<?php echo isset($_POST['db_host']) ? htmlspecialchars($_POST['db_host']) : 'localhost'; ?>" class="form-control" required>
                                 </div>
                                 <div class="col-12 col-md-6">
                                     <label>Nom de la base</label>
-                                    <input type="text" name="db_name" value="maokaa" class="form-control" required>
+                                    <input type="text" name="db_name" value="<?php echo isset($_POST['db_name']) ? htmlspecialchars($_POST['db_name']) : 'maokaa'; ?>" class="form-control" required>
                                 </div>
                             </div>
 
                             <div class="row g-3 mt-3">
                                 <div class="col-12 col-md-6">
                                     <label>Utilisateur</label>
-                                    <input type="text" name="db_user" value="root" class="form-control" required>
+                                    <input type="text" name="db_user" value="<?php echo isset($_POST['db_user']) ? htmlspecialchars($_POST['db_user']) : 'root'; ?>" class="form-control" required>
                                 </div>
                                 <div class="col-12 col-md-6">
                                     <label>Mot de passe</label>
-                                    <input type="password" name="db_pass" class="form-control" placeholder="(vide si root sans mot de passe)">
+                                    <input type="password" name="db_pass" class="form-control" placeholder="(vide si root sans mot de passe)" value="<?php echo isset($_POST['db_pass']) ? htmlspecialchars($_POST['db_pass']) : ''; ?>">
                                 </div>
                             </div>
 
@@ -187,21 +187,75 @@ if ($step == 2) {
                         <?php
                         // Tester la connexion si submit
                         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['test_db'])) {
-                            $dsn = "mysql:host=" . $_POST['db_host'] . ";dbname=" . $_POST['db_name'] . ";charset=utf8mb4";
-                            $pdo = init_db($dsn, $_POST['db_user'], $_POST['db_pass']);
+                            $db_host = $_POST['db_host'];
+                            $db_name = $_POST['db_name'];
+                            $db_user = $_POST['db_user'];
+                            $db_pass = $_POST['db_pass'];
+
+                            // DSN sans base de données pour créer la base
+                            $dsn_no_db = "mysql:host=" . $db_host . ";charset=utf8mb4";
+
+                            // Créer la base de données si elle n'existe pas
+                            try {
+                                $pdo_no_db = new PDO($dsn_no_db, $db_user, $db_pass, [
+                                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                                ]);
+                                $pdo_no_db->exec("CREATE DATABASE IF NOT EXISTS `" . $db_name . "`");
+                                $success[] = "Base de données `" . htmlspecialchars($db_name) . "` créée ou utilisée.";
+                            } catch (PDOException $e) {
+                                // Si la base existe déjà ou erreur, continuer
+                                $success[] = "Base de données détectée : " . htmlspecialchars($db_name);
+                            }
+
+                            // Maintenant se connecter à la base spécifique
+                            $dsn = $dsn_no_db . ";dbname=" . $db_name;
+                            $pdo = init_db($dsn, $db_user, $db_pass);
 
                             if ($pdo) {
                                 $success[] = "Connexion à la base réussie !";
                                 // Stocker uniquement les paramètres, pas l'objet PDO
-                                $_SESSION['db_host'] = $_POST['db_host'];
-                                $_SESSION['db_name'] = $_POST['db_name'];
-                                $_SESSION['db_user'] = $_POST['db_user'];
-                                $_SESSION['db_pass'] = $_POST['db_pass'];
+                                $_SESSION['db_host'] = $db_host;
+                                $_SESSION['db_name'] = $db_name;
+                                $_SESSION['db_user'] = $db_user;
+                                $_SESSION['db_pass'] = $db_pass;
                                 $_SESSION['db_dsn'] = $dsn;
+                                // Importer le schema SQL
+                                $sqlFile = __DIR__ . '/install.sql';
+                                if (file_exists($sqlFile)) {
+                                    $sql = file_get_contents($sqlFile);
+                                    try {
+                                        $pdo->exec($sql);
+                                        $success[] = "Schema de la base de données importé avec succès !";
+                                    } catch (PDOException $e) {
+                                        $errorMsg = "Erreur lors de l'import du schema : " . $e->getMessage();
+                                        $errors[] = $errorMsg;
+                                        // Afficher l'erreur détaillée
+                                        echo '<div class="mt-3 p-3 bg-danger text-white rounded"><i class="fas fa-exclamation-triangle me-2"></i>' . htmlspecialchars($errorMsg) . '</div>';
+                                        echo '<div class="mt-2 p-2 bg-warning text-dark rounded small">Vérifiez que la base de données `' . htmlspecialchars($db_name) . '` existe et est accessible.</div>';
+                                        ?>
+                                        <div class="mt-3">
+                                            <a href="?step=2" class="btn btn-light btn-sm">
+                                                <i class="fas fa-arrow-left me-1"></i>Retour pour corriger
+                                            </a>
+                                        </div>
+                                        <?php
+                                        exit;
+                                    }
+                                } else {
+                                    $errors[] = "Fichier install.sql introuvable.";
+                                    echo '<div class="mt-3 p-3 bg-danger text-white rounded"><i class="fas fa-exclamation-triangle me-2"></i>' . htmlspecialchars($errors[0]) . '</div>';
+                                    exit;
+                                }
                                 ?>
                                 <div class="mt-3 p-3 bg-success text-white rounded">
                                     <i class="fas fa-check me-2"></i>
                                     <?php echo htmlspecialchars($success[0]); ?>
+                                    <?php if (isset($success[1])): ?>
+                                    <div class="mt-2 small"><?php echo htmlspecialchars($success[1]); ?></div>
+                                    <?php endif; ?>
+                                    <?php if (isset($success[2])): ?>
+                                    <div class="mt-2 small"><?php echo htmlspecialchars($success[2]); ?></div>
+                                    <?php endif; ?>
                                     <div class="mt-3">
                                         <a href="?step=3" class="btn btn-light btn-sm">
                                             <i class="fas fa-arrow-right me-1"></i>Continuer à l'étape suivante
