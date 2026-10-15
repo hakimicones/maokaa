@@ -1,0 +1,7 @@
+{
+  "name": "Accueil simple",
+  "version": "1.0.0",
+  "description": "Un thème blanc et épuré, personnalisable depuis l'administration.",
+  "author": "Maokaa",
+  "templates": ["home", "default", "page", "listing", "products", "news", "solutions", "about"]
+}

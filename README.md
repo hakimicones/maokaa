@@ -157,9 +157,13 @@ maokaa/
 │   └── tools/                    # Utilitaires (migration shortcodes)
 │
 ├── themes/                       # Thèmes frontend
-│   └── default/
+│   ├── default/
 │       ├── templates/            # Templates du thème
 │       └── assets/               # CSS/JS du thème
+│   └── welcome/                  # Thème générique « Accueil simple »
+│       ├── templates/
+│       ├── partials/
+│       └── assets/
 │
 ├── assets/                       # Fichiers publics partagés
 │   ├── css/style.css
@@ -343,6 +347,8 @@ themes/{theme_name}/templates/{template}.php
 Templates disponibles : `home`, `page`, `default`, `listing`, `products`, `news`, `404`.
 
 Fallback automatique sur `app/views/templates/` si le fichier n'existe pas dans le thème.
+
+Le thème **Accueil simple** (`themes/welcome`) est sélectionnable depuis la gestion des thèmes. Il fournit une page d'accueil générique indépendante du contenu de la page d'accueil en base de données, une navigation limitée au lien « Accueil » et des gabarits neutres pour les autres pages.
 
 ---
 
