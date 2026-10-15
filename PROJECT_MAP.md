@@ -1,6 +1,6 @@
 # PROJECT MAP — Maokaa CMS
 
-> Généré le 13 Juin 2026 — Audit code
+> Généré le 14 Octobre 2026 — Audit code
 
 ---
 
@@ -29,6 +29,8 @@
 - `includes/inline_edit_setting.php` — Endpoint AJAX pour l'édition inline des settings (footer : phone, email, address, etc.) (POST, admin)
 - `includes/settings_helpers.php` — Helpers `get_setting($pdo, $key, $default)` / `set_setting($pdo, $key, $value)` pour la table `settings`
 - `includes/api_ai_content.php` — Endpoint AJAX : régénération du HTML d'une page via IA (POST, admin), s'appuie sur `includes/ai_client.php`
+- `includes/api_menu_items.php` — Endpoint JSON pour la gestion des menus (POST, admin)
+- `includes/api_page_create.php` — Endpoint pour la création rapide de pages (POST, admin)
 
 ### Dépendances CDN (aucun package manager)
 - Bootstrap 5.3 (CSS + JS)
@@ -52,6 +54,7 @@ Requête HTTP
     → includes/db.php          (connexion PDO)
     → includes/auth.php        (session + CSRF)
     → includes/theme.php       (ThemeManager)
+    → includes/modules.php     (ModuleRegistry)
     → app/models/Content.php
     → Résolution slug depuis l'URL
       → /login       → login.php
@@ -260,20 +263,53 @@ ThemeManager::template($name)
   → fallback: themes/default/templates/{name}.php
   → fallback: app/views/templates/{name}.php
   → return '' si introuvable
+
+Thèmes disponibles :
+  - default   (thème de base)
+  - default1  (variante)
+  - ocean     (thème bleu)
+  - violet    (thème violet)
+  - rose      (thème rose)
+
+Chaque thème contient :
+  - theme.json (manifeste : name, version, description)
+  - templates/ (home, page, products, listing, news, about, solutions)
+  - partials/  (navbar, footer)
+  - assets/css/theme.css
+  - assets/js/maokaa.js, site-editing.js
+  - preview.svg (aperçu visuel généré automatiquement)
+
+Installation de thème :
+  → Upload ZIP via admin/dashboard.php?section=themes
+  → Validation : magic bytes PK\x03\x04, taille ≤ 10 Mo
+  → Extraction en staging, vérification theme.json obligatoire
+  → Déplacement vers themes/{folder}
+  → Génération automatique de preview.svg depuis theme.css
+  → Vérification structure via includes/theme_structure.json
+  → Activation automatique
 ```
 
 ### 7. Admin CRUD Architecture
 ```
 admin/dashboard.php (single page, sections via ?section=)
-  ├── POST actions centralisées (delete_product, delete_brand, etc.)
+  ├── POST actions centralisées (delete_product, delete_brand, delete_user, toggle_module, etc.)
   ├── CSRF + logAudit sur chaque action
   └── Sections: overview, products, categories, content, brands,
-                partners, news, messages
+                partners, news, messages, users, modules, themes, settings
 
 Sous-pages (CRUD dédiés):
   admin/products/, admin/categories/, admin/brands/, admin/partners/
   admin/news/, admin/content/, admin/sliders/, admin/menus/
-  admin/messages/, admin/themes/, admin/media/
+  admin/messages/, admin/themes/, admin/media/, admin/users/
+
+Gestion des utilisateurs (depuis oct 2026):
+  → admin/users/ : CRUD complet (create, edit)
+  → Modèle User.php : table admins
+  → Champs : username, password_hash, fullname, email, active, must_change_password
+  → Création : mot de passe hashé (bcrypt), flag must_change_password=1
+  → Édition : option changement mot de passe
+  → Droits : section users réservée aux admins (hasRole('admin'))
+  → Audit : logAudit sur chaque action CRUD
 
 Recherche & pagination (Simple-DataTables) :
   → 7 tables du dashboard activées via data-datatable + data-dt-columns
@@ -304,9 +340,49 @@ upload_image() / upload_pdf() dans includes/upload.php
 admins → categories → marques → partenaires → actualites
 → produits → produit_images → contacts → content
 → sliders → menus → settings → audit_logs → login_attempts
+→ modules (depuis juin 2026)
 ```
 
-### 10. Assistant IA (régénération HTML)
+### 10. Module Registry (`includes/modules.php`)
+```
+ModuleRegistry::init($pdo) → charge les modules depuis la table modules
+
+Types de modules :
+  - core   : toujours actifs, non désactivables (content, menus)
+  - annex  : fonctionnalités secondaires (brands, partners, news, messages, media, sliders)
+  - addon  : extensions optionnelles (non utilisées actuellement)
+
+API :
+  → is_module_enabled($slug) : bool
+  → ModuleRegistry::isEnabled($slug) : bool
+  → ModuleRegistry::enable($slug) : bool (vérifie dépendances)
+  → ModuleRegistry::disable($slug) : bool (vérifie dépendances inverses)
+  → ModuleRegistry::getEnabled($type) : array
+
+Activation/Désactivation :
+  → Interface : admin/dashboard.php?section=modules
+  → Vérification des dépendances avant activation
+  → Vérification des modules dépendants avant désactivation
+  → logAudit sur chaque changement
+```
+
+### 11. Sitemap XML Dynamique (`sitemap.php`)
+```
+sitemap.php → génère sitemap.xml à la volée
+
+Sections incluses :
+  1. Pages content publiées (status = 'published')
+  2. Produits actifs (si module products activé)
+  3. Actualités publiées (si module news activé)
+
+Format :
+  → <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  → <loc>, <lastmod>, <changefreq> pour chaque URL
+  → Exclusion automatique : /login, /admin, /404
+  → Headers : Content-Type: application/xml, X-Robots-Tag: index, follow
+```
+
+### 12. Assistant IA (régénération HTML)
 ```
 Configuration : .env → AI_API_URL, AI_API_KEY, AI_MODEL, AI_MAX_TOKENS
   (API compatible OpenAI Chat Completions : OpenAI, Mistral, OpenRouter, etc.)
@@ -360,3 +436,16 @@ Assistant IA par champ (bouton "IA" de la barre WYSIWYG flottante) :
 - **Editor**: Configuration dynamique via JS (baseUrl depuis PHP)
 - **Sécurité**: CSRF tokens, bcrypt, rate limiting, prepared statements, sanitize_body_html
 - **Tables admin**: Simple-DataTables via `data-datatable` (déclaratif, DRY, pas de jQuery)
+- **Modules**: Système modulaire avec dépendances et types (core/annex/addon)
+- **Gestion utilisateurs**: RBAC basique (rôle admin), changement mot de passe forcé
+
+---
+
+## Nouveautés récentes (Octobre 2026)
+
+1. **Système de modules** : Activation/désactivation dynamique des fonctionnalités
+2. **Sitemap XML dynamique** : Génération automatique pour SEO
+3. **Gestion des utilisateurs** : CRUD complet avec gestion des rôles
+4. **Amélioration du dashboard** : Interface modernisée avec cartes visuelles pour les pages CMS
+5. **Thèmes multiples** : Support de 5 thèmes (default, default1, ocean, violet, rose)
+6. **Installation de thèmes** : Upload ZIP avec validation et génération d'aperçu automatique
