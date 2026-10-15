@@ -64,3 +64,18 @@ function loadEnv($path = null) {
 // Charger le fichier .env au démarrage
 loadEnv();
 
+// Configuration du mode développement
+if (!defined('APP_DEBUG')) {
+    define('APP_DEBUG', false);
+}
+
+// Activer l'affichage des erreurs en mode dev
+if (APP_DEBUG === true || APP_DEBUG === 'true' || APP_DEBUG === 1 || APP_DEBUG === '1') {
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+} else {
+    ini_set('display_errors', 0);
+    error_reporting(0);
+}
+
