@@ -6,7 +6,36 @@ session_start();
 
 // Empêcher le reinstall si verrouillé
 if (file_exists(__DIR__ . '/install.lock')) {
-    header('Location: ?done=1');
+    $success[] = "Installation déjà effectuée. Vous pouvez accéder à votre site.";
+    ?>
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Installation Maokaa CMS - Terminé</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
+            body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8f9fa; }
+            .card { max-width: 500px; padding: 3rem 2rem; text-align: center; }
+            .check-icon { width: 80px; height: 80px; margin: 0 auto 1.5rem; }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <div class="check-icon">
+                <i class="fas fa-check-circle" style="color: #28a745;"></i>
+            </div>
+            <h1 class="mb-3">Installation terminée</h1>
+            <p class="mb-4">Maokaa CMS est déjà installé.</p>
+            <a href="/Hebergement/maokaa/" class="btn btn-primary">
+                <i class="fas fa-home me-2"></i>Accéder au site
+            </a>
+        </div>
+    </body>
+    </html>
+    <?php
     exit;
 }
 

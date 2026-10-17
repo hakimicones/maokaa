@@ -862,3 +862,9 @@ body:has(#ie-toolbar) { padding-top: 36px !important; }
     cursor: pointer;
 }
 .nav-ie-menu-add { border:none; margin-left: 15px;}
+
+ 
+
+.ie-footer-edit { }
+
+.btn-footer-edit  { border:none; margin-left: 15px;}

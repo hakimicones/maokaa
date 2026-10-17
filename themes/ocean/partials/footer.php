@@ -78,7 +78,7 @@ if (!is_array($footerColumns) || empty($footerColumns)) {
             ?>
             <div data-ie-footer-col="<?php echo $fcIndex; ?>" style="position:relative;">
                 <?php if ($footerAdmin): ?>
-                <button type="button" class="ie-footer-edit" data-ie-footer-edit="<?php echo $fcIndex; ?>" title="Modifier cette colonne" aria-label="Modifier la colonne <?php echo htmlspecialchars($fcTitle); ?>">✎</button>
+                <button type="button" class="btn-footer-edit ie-footer-edit" data-ie-footer-edit="<?php echo $fcIndex; ?>" title="Modifier cette colonne" aria-label="Modifier la colonne <?php echo htmlspecialchars($fcTitle); ?>">✎</button>
                 <?php endif; ?>
                 <h5 style="font-weight:700; font-size:1rem; letter-spacing:1px; text-transform:uppercase; color:#fff; margin-bottom:1.2rem;"><?php echo htmlspecialchars($fcTitle); ?></h5>
                 <ul style="list-style:none; padding:0;">
