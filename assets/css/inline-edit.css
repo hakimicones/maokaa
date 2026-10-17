@@ -836,3 +836,29 @@ body:has(#ie-toolbar) { padding-top: 36px !important; }
     color: #fff;
 }
 .ie-btn-primary:hover:not(:disabled) { background: #15803d; }
+
+
+.ie-menu-btn {
+    border: none;
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+.nav-item { 
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    border: 1px solid;
+    border-radius: 5px;
+    padding: 0 15px;}
+
+.ie-menu-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    background: #16a34a;
+    color: #fff;
+    cursor: pointer;
+}
+.nav-ie-menu-add { border:none; margin-left: 15px;}

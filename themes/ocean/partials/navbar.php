@@ -119,7 +119,7 @@ if ($mainMenu) {
                 <?php endforeach; ?>
                 <?php if ($isAdmin): ?>
                 <li class="nav-item">
-                    <button type="button" class="nav-link border-0 bg-transparent" data-ie-menu-add title="Ajouter un élément au menu" aria-label="Ajouter un élément au menu">
+                    <button type="button" class="ie-menu-add nav-link border-0 bg-transparent" data-ie-menu-add title="Ajouter un élément au menu" aria-label="Ajouter un élément au menu">
                         <i class="fas fa-plus me-1" style="color:#FF6B00;"></i>Ajouter
                     </button>
                 </li>

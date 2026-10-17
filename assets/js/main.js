@@ -56,9 +56,10 @@ function initializeFormValidation() {
 function initializeNav() {
     const currentUrl = window.location.pathname;
     const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
-    
+
     navLinks.forEach(link => {
-        if (link.href.includes(currentUrl) || (currentUrl === '/' && link.href.endsWith('/'))) {
+        // Vérifier que link.href existe avant d'appeler includes
+        if (link.href && (link.href.includes(currentUrl) || (currentUrl === '/' && link.href.endsWith('/')))) {
             link.classList.add('active');
         }
     });
