@@ -15,6 +15,8 @@ $metaTitle = $storedMetaTitle !== '' && !welcome_is_legacy_content($storedMetaTi
 $metaDescription = $storedMetaDescription !== '' && !welcome_is_legacy_content($storedMetaDescription)
     ? $storedMetaDescription
     : 'Bienvenue sur votre site. Personnalisez-le pour présenter votre activité.';
+$availableThemes = ThemeManager::list();
+$themeCount = count($availableThemes);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -79,6 +81,41 @@ $metaDescription = $storedMetaDescription !== '' && !welcome_is_legacy_content($
                     <h3>Choisissez vos images</h3>
                     <p>Remplacez cette illustration par vos propres photos et visuels.</p>
                 </article>
+            </section>
+            <section id="themes" class="welcome-themes" aria-labelledby="welcome-themes-title">
+                <div class="welcome-themes__intro">
+                    <span class="welcome-eyebrow">À vous de choisir</span>
+                    <h2 id="welcome-themes-title">Un thème pour chaque style</h2>
+                    <p>Explorez les <?php echo $themeCount; ?> thèmes disponibles et choisissez celui qui correspond le mieux à votre activité. Vous pourrez ensuite le personnaliser depuis l’administration.</p>
+                </div>
+                <?php if ($availableThemes): ?>
+                <div class="welcome-themes__grid">
+                    <?php foreach ($availableThemes as $theme): ?>
+                    <article class="welcome-theme<?php echo !empty($theme['active']) ? ' is-active' : ''; ?>">
+                        <div class="welcome-theme__preview">
+                            <?php if (!empty($theme['preview'])): ?>
+                            <img src="<?php echo htmlspecialchars($theme['preview']); ?>" alt="Aperçu du thème <?php echo htmlspecialchars($theme['name'] ?? $theme['folder']); ?>" loading="lazy">
+                            <?php else: ?>
+                            <div class="welcome-theme__placeholder" aria-hidden="true">
+                                <i class="fa-solid fa-palette"></i>
+                            </div>
+                            <?php endif; ?>
+                            <?php if (!empty($theme['active'])): ?>
+                            <span class="welcome-theme__badge"><i class="fa-solid fa-check" aria-hidden="true"></i> Thème actuel</span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="welcome-theme__details">
+                            <h3><?php echo htmlspecialchars($theme['name'] ?? $theme['folder']); ?></h3>
+                            <p><?php echo htmlspecialchars($theme['description'] ?? 'Un thème à personnaliser selon vos envies.'); ?></p>
+                        </div>
+                    </article>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+                <a class="welcome-themes__action" href="<?php echo BASE_URL; ?>admin/dashboard.php?section=themes">
+                    Choisir un thème dans l’administration
+                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                </a>
             </section>
         <?php endif; ?>
     </main>
