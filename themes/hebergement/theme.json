@@ -1,0 +1,7 @@
+{
+  "name": "Hébergement — Bleu nuit & orange",
+  "version": "1.0.0",
+  "description": "Un thème professionnel pour présenter des offres d'hébergement web, des domaines et des services numériques.",
+  "author": "Maokaa",
+  "templates": ["home", "default", "page", "listing", "products", "news", "solutions"]
+}

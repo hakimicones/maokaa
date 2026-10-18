@@ -68,7 +68,7 @@ if ($mainMenu) {
                     $showIcon = !isset($params['icon']) || $params['icon'];
                     $icon     = ($showIcon && !empty($item['icon'])) ? htmlspecialchars($item['icon']) : '';
                 ?>
-                <li class="nav-item<?php echo !empty($item['children']) ? ' dropdown' : ''; ?>"
+                <li class="nav-item<?php echo !empty($item['children']) ? ' dropdown' : ''; ?><?php echo $isAdmin ? ' ie-menu-editable' : ''; ?>"
                     data-ie-menu-item="<?php echo (int)$item['id']; ?>"
                     data-ie-menu-title="<?php echo htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8'); ?>"
                     data-ie-menu-url="<?php echo htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8'); ?>"
@@ -85,8 +85,8 @@ if ($mainMenu) {
                     </a>
                     <?php if ($isAdmin): ?>
                     <div class="ie-menu-actions">
-                        <button type="button" class="ie-menu-btn" data-ie-menu-edit title="Modifier" aria-label="Modifier <?php echo htmlspecialchars($item['title']); ?>">✎</button>
-                        <button type="button" class="ie-menu-btn danger" data-ie-menu-delete title="Supprimer" aria-label="Supprimer <?php echo htmlspecialchars($item['title']); ?>">🗑</button>
+                        <button type="button" class="ie-menu-btn" data-ie-menu-edit title="Modifier" aria-label="Modifier <?php echo htmlspecialchars($item['title']); ?>"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                        <button type="button" class="ie-menu-btn danger" data-ie-menu-delete title="Supprimer" aria-label="Supprimer <?php echo htmlspecialchars($item['title']); ?>"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button>
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($item['children'])): ?>
@@ -95,7 +95,8 @@ if ($mainMenu) {
                             $cp   = $child['params'] ? json_decode($child['params'], true) : [];
                             $ci   = (!isset($cp['icon']) || $cp['icon']) && !empty($child['icon']) ? htmlspecialchars($child['icon']) : '';
                         ?>
-                        <li data-ie-menu-item="<?php echo (int)$child['id']; ?>"
+                        <li class="<?php echo $isAdmin ? 'ie-menu-editable' : ''; ?>"
+                            data-ie-menu-item="<?php echo (int)$child['id']; ?>"
                             data-ie-menu-title="<?php echo htmlspecialchars($child['title'], ENT_QUOTES, 'UTF-8'); ?>"
                             data-ie-menu-url="<?php echo htmlspecialchars($child['url'], ENT_QUOTES, 'UTF-8'); ?>"
                             data-ie-menu-icon="<?php echo htmlspecialchars($child['icon'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
@@ -103,15 +104,15 @@ if ($mainMenu) {
                             data-ie-menu-parent="<?php echo (int)($child['parent_id'] ?? 0); ?>"
                             data-ie-menu-active="<?php echo (int)$child['active']; ?>"
                             data-ie-menu-showicon="<?php echo (int)($cp['icon'] ?? 1); ?>"
-                            style="position:relative;">
+                            >
                             <a class="dropdown-item" href="<?php echo BASE_URL . ltrim($child['url'], '/'); ?>">
                                 <?php if ($ci): ?><i class="<?php echo $ci; ?> me-2"></i><?php endif; ?>
                                 <?php echo htmlspecialchars($child['title']); ?>
                             </a>
                             <?php if ($isAdmin): ?>
                             <div class="ie-menu-actions">
-                                <button type="button" class="ie-menu-btn" data-ie-menu-edit title="Modifier" aria-label="Modifier <?php echo htmlspecialchars($child['title']); ?>">✎</button>
-                                <button type="button" class="ie-menu-btn danger" data-ie-menu-delete title="Supprimer" aria-label="Supprimer <?php echo htmlspecialchars($child['title']); ?>">🗑</button>
+                                <button type="button" class="ie-menu-btn" data-ie-menu-edit title="Modifier" aria-label="Modifier <?php echo htmlspecialchars($child['title']); ?>"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                                <button type="button" class="ie-menu-btn danger" data-ie-menu-delete title="Supprimer" aria-label="Supprimer <?php echo htmlspecialchars($child['title']); ?>"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button>
                             </div>
                             <?php endif; ?>
                         </li>
@@ -122,8 +123,8 @@ if ($mainMenu) {
                 <?php endforeach; ?>
                 <?php if ($isAdmin): ?>
                 <li class="nav-item nav-ie-menu-add">
-                    <button type="button" class="ie-menu-add nav-link border-0  " data-ie-menu-add title="Ajouter un élément au menu" aria-label="Ajouter un élément au menu">
-                        <i class="fas fa-plus me-1" style="color:#315efb;"></i>Ajouter
+                    <button type="button" class="ie-menu-add" data-ie-menu-add title="Ajouter un élément au menu" aria-label="Ajouter un élément au menu">
+                        <i class="fa-solid fa-plus" aria-hidden="true"></i><span>Ajouter</span>
                     </button>
                 </li>
                 <?php endif; ?>

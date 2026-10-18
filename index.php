@@ -60,6 +60,13 @@ if (!$page) {
 
 // Charger le template depuis le thème actif
 $template     = !empty($page['template']) ? $page['template'] : 'default';
+if (
+    ThemeManager::getActive() === 'hebergement'
+    && $template === 'default'
+    && in_array($slug, ['services', 'solutions', 'nos-solutions'], true)
+) {
+    $template = 'solutions';
+}
 $templateFile = ThemeManager::template($template);
 
 if (empty($templateFile)) {
