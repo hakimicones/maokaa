@@ -45,6 +45,19 @@ if (strpos($slug, 'admin') === 0) {
 // Charger la page depuis la table content
 $contentModel = new Content($pdo);
 $page         = $contentModel->findBySlug($slug);
+$isHostingTheme = ThemeManager::getActive() === 'hebergement';
+$isHostingDomainRoute = $isHostingTheme && in_array($slug, ['domaine', 'domaines'], true);
+
+if ($isHostingDomainRoute) {
+    $page = [
+        'slug' => 'domaine',
+        'title' => 'Trouvez le domaine qui vous représente',
+        'meta_title' => 'Nom de domaine — Rechercher et choisir une extension',
+        'meta_description' => 'Recherchez un nom de domaine et consultez les extensions et tarifs proposés.',
+        'template' => 'domaines',
+        'body' => '',
+    ];
+}
 
 if (!$page) {
     $page404 = $contentModel->findBySlug('404');
@@ -60,8 +73,10 @@ if (!$page) {
 
 // Charger le template depuis le thème actif
 $template     = !empty($page['template']) ? $page['template'] : 'default';
-if (
-    ThemeManager::getActive() === 'hebergement'
+if ($isHostingDomainRoute) {
+    $template = 'domaines';
+} elseif (
+    $isHostingTheme
     && $template === 'default'
     && in_array($slug, ['services', 'solutions', 'nos-solutions'], true)
 ) {

@@ -37,14 +37,107 @@ $brandStyle = 'color:' . $nameColor . ';'
     . 'font-style:' . ($brandItalic === '1' ? 'italic' : 'normal') . ';'
     . 'text-decoration:' . ($brandUnderline === '1' ? 'underline' : 'none') . ';';
 $isAdmin    = function_exists('isLoggedIn') && isLoggedIn();
+$isHostingTheme = class_exists('ThemeManager') && ThemeManager::getActive() === 'hebergement';
 $mainMenuId = $mainMenu ? (int)$mainMenu['id'] : 0;
 $navItems   = [];
 if ($mainMenu) {
     $navItems = $menuModel->getItemsWithChildren($mainMenu['id'], false);
 }
+$hostingNavItems = [
+    [
+        'title' => 'Accueil',
+        'url' => BASE_URL,
+        'icon' => 'fa-solid fa-house',
+        'children' => [],
+    ],
+    [
+        'title' => 'Nom de domaine',
+        'url' => BASE_URL . 'domaine#domain-search',
+        'icon' => 'fa-solid fa-globe',
+        'children' => [
+            [
+                'title' => 'Recherche de domaine',
+                'description' => 'Vérifiez la disponibilité de votre nom de domaine.',
+                'url' => BASE_URL . 'domaine#domain-search',
+            ],
+            [
+                'title' => 'Recherche de domaines par lot',
+                'description' => 'Vérifiez plusieurs noms de domaine en une seule demande.',
+                'url' => BASE_URL . 'domaine#domain-bulk-search',
+            ],
+            [
+                'title' => 'Transfert de domaines',
+                'description' => 'Transférez votre domaine et demandez son renouvellement.',
+                'url' => BASE_URL . 'domaine#domain-transfer',
+            ],
+            [
+                'title' => 'Tarifs et liste des noms de domaine',
+                'description' => 'Consultez les extensions disponibles et demandez leurs tarifs.',
+                'url' => BASE_URL . 'domaine#domain-pricing',
+            ],
+            [
+                'title' => 'Whois check',
+                'description' => 'Consultez les informations publiques d’un nom de domaine.',
+                'url' => 'https://whois.octenium.com/',
+                'external' => true,
+            ],
+            [
+                'title' => 'Gestion de domaine',
+                'description' => 'Gestion DNS, serveurs DNS et enregistrements A, CNAME, SPF, DKIM, AAAA.',
+                'url' => BASE_URL . 'domaine#domain-management',
+            ],
+        ],
+    ],
+    [
+        'title' => 'Hébergement Web',
+        'url' => BASE_URL . 'services#hebergement-web',
+        'icon' => 'fa-solid fa-server',
+        'children' => [
+            [
+                'title' => 'Hébergement Web Mutualisé',
+                'description' => 'Hébergez votre site avec e-mail, contacts et agendas.',
+                'url' => BASE_URL . 'services#hebergement-mutualise',
+            ],
+            [
+                'title' => 'Hébergement localisé en Algérie',
+                'description' => 'Hébergez votre site sur des serveurs installés physiquement en Algérie.',
+                'url' => BASE_URL . 'services#hebergement-algerie',
+            ],
+            [
+                'title' => 'Serveur dédié VPS',
+                'description' => 'Serveur Virtuel Privé.',
+                'url' => BASE_URL . 'services#serveur-vps',
+            ],
+            [
+                'title' => 'Serveur dédié Virtuel PRO',
+                'description' => 'Puissance, flexibilité, licence WHM/cPanel incluse.',
+                'url' => BASE_URL . 'services#serveur-dedie',
+            ],
+            [
+                'title' => 'Serveurs VPS localisés en Algérie',
+                'description' => 'Des serveurs VPS installés en Algérie.',
+                'url' => BASE_URL . 'services#serveur-vps-algerie',
+            ],
+        ],
+    ],
+    ['title' => 'Mail', 'url' => BASE_URL . 'services#email', 'icon' => 'fa-solid fa-envelope', 'children' => []],
+    ['title' => 'Revendeur', 'url' => BASE_URL . 'services#revendeur', 'icon' => 'fa-solid fa-people-arrows-left-right', 'children' => []],
+];
+$displayMenuItems = $isHostingTheme ? $hostingNavItems : $menuItems;
 ?>
-<nav class="welcome-header navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
-    <div class="container">
+<nav class="welcome-header navbar navbar-expand-<?php echo $isHostingTheme ? 'xxl' : 'lg'; ?> navbar-light bg-white shadow-sm sticky-top">
+    <?php if ($isHostingTheme): ?>
+    <div class="hosting-nav-topbar">
+        <div class="container hosting-nav-topbar__inner">
+            <span>Hébergement web, domaines & solutions numériques</span>
+            <a href="<?php echo BASE_URL; ?>contact">Besoin d’aide ? Contactez-nous</a>
+        </div>
+    </div>
+    <?php endif; ?>
+    <div class="container<?php echo $isHostingTheme ? ' hosting-nav-main' : ''; ?>">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Ouvrir le menu de navigation" aria-controls="navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
         <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?php echo BASE_URL; ?>" aria-label="<?php echo htmlspecialchars($siteName); ?> — Retour à l'accueil">
             <?php if (!empty($siteLogo)): ?>
                 <img src="<?php echo BASE_URL . ltrim($siteLogo, '/'); ?>" alt="<?php echo htmlspecialchars($siteName); ?>" data-ie-logo style="height:40px;width:auto;">
@@ -58,17 +151,20 @@ if ($mainMenu) {
             </span>
             <?php endif; ?>
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Ouvrir le menu de navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav mx-auto align-items-center" id="main-menu-nav">
-                <?php foreach ($menuItems as $item):
-                    $params   = $item['params'] ? json_decode($item['params'], true) : [];
-                    $showIcon = !isset($params['icon']) || $params['icon'];
-                    $icon     = ($showIcon && !empty($item['icon'])) ? htmlspecialchars($item['icon']) : '';
+                <?php foreach ($displayMenuItems as $item):
+                    $hasChildren = !empty($item['children']);
+                    $isDomainNavItem = $isHostingTheme && ($item['title'] ?? '') === 'Nom de domaine';
+                    $params = !empty($item['params']) ? json_decode($item['params'], true) : [];
+                    $params = is_array($params) ? $params : [];
+                    $showIcon = !isset($params['icon']) || (bool)$params['icon'];
+                    $icon = ($isHostingTheme || $showIcon) && !empty($item['icon'])
+                        ? htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8')
+                        : '';
                 ?>
-                <li class="nav-item<?php echo !empty($item['children']) ? ' dropdown' : ''; ?><?php echo $isAdmin ? ' ie-menu-editable' : ''; ?>"
+                <li class="nav-item<?php echo $hasChildren ? ' dropdown' : ''; ?><?php echo $isDomainNavItem ? ' hosting-nav-item--domain' : ''; ?><?php echo $isAdmin && !$isHostingTheme ? ' ie-menu-editable' : ''; ?>"
+                    <?php if (!$isHostingTheme): ?>
                     data-ie-menu-item="<?php echo (int)$item['id']; ?>"
                     data-ie-menu-title="<?php echo htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8'); ?>"
                     data-ie-menu-url="<?php echo htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8'); ?>"
@@ -76,26 +172,40 @@ if ($mainMenu) {
                     data-ie-menu-position="<?php echo (int)$item['position']; ?>"
                     data-ie-menu-parent="<?php echo (int)($item['parent_id'] ?? 0); ?>"
                     data-ie-menu-active="<?php echo (int)$item['active']; ?>"
-                    data-ie-menu-showicon="<?php echo (int)$showIcon; ?>">
-                    <a class="nav-link<?php echo !empty($item['children']) ? ' dropdown-toggle' : ''; ?>"
-                       href="<?php echo BASE_URL . ltrim($item['url'], '/'); ?>"
-                       <?php echo !empty($item['children']) ? 'role="button" data-bs-toggle="dropdown"' : ''; ?>>
-                        <?php if ($icon): ?><i class="<?php echo $icon; ?> me-1"></i><?php endif; ?>
-                        <?php echo htmlspecialchars($item['title']); ?>
+                    data-ie-menu-showicon="<?php echo (int)$showIcon; ?>"
+                    <?php endif; ?>>
+                    <a class="nav-link<?php echo $hasChildren && !$isDomainNavItem ? ' dropdown-toggle' : ''; ?>"
+                       href="<?php echo $isHostingTheme ? htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8') : BASE_URL . ltrim($item['url'], '/'); ?>"
+                       <?php echo $hasChildren && !$isDomainNavItem ? 'role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"' : ''; ?>>
+                        <?php if ($icon && !$isHostingTheme): ?><i class="<?php echo $icon; ?> me-1"></i><?php endif; ?>
+                        <?php echo htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8'); ?>
                     </a>
-                    <?php if ($isAdmin): ?>
+                    <?php if ($isDomainNavItem): ?>
+                    <button class="hosting-nav-submenu-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-label="Afficher les services de domaine" aria-expanded="false"></button>
+                    <?php endif; ?>
+                    <?php if ($isAdmin && !$isHostingTheme): ?>
                     <div class="ie-menu-actions">
                         <button type="button" class="ie-menu-btn" data-ie-menu-edit title="Modifier" aria-label="Modifier <?php echo htmlspecialchars($item['title']); ?>"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
                         <button type="button" class="ie-menu-btn danger" data-ie-menu-delete title="Supprimer" aria-label="Supprimer <?php echo htmlspecialchars($item['title']); ?>"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($item['children'])): ?>
-                    <ul class="dropdown-menu">
+                    <?php if ($hasChildren): ?>
+                    <ul class="dropdown-menu hosting-nav-dropdown">
                         <?php foreach ($item['children'] as $child):
-                            $cp   = $child['params'] ? json_decode($child['params'], true) : [];
-                            $ci   = (!isset($cp['icon']) || $cp['icon']) && !empty($child['icon']) ? htmlspecialchars($child['icon']) : '';
+                            $childParams = !empty($child['params']) ? json_decode($child['params'], true) : [];
+                            $childParams = is_array($childParams) ? $childParams : [];
+                            $childShowIcon = !isset($childParams['icon']) || (bool)$childParams['icon'];
+                            $childIcon = !empty($child['icon']) ? htmlspecialchars($child['icon'], ENT_QUOTES, 'UTF-8') : '';
+                            if (!$isHostingTheme && !$childShowIcon) {
+                                $childIcon = '';
+                            }
+                            $childTitle = htmlspecialchars($child['title'], ENT_QUOTES, 'UTF-8');
+                            $childDescription = htmlspecialchars($child['description'] ?? '', ENT_QUOTES, 'UTF-8');
+                            $childUrl = $isHostingTheme
+                                ? (string)$child['url']
+                                : BASE_URL . ltrim($child['url'], '/');
                         ?>
-                        <li class="<?php echo $isAdmin ? 'ie-menu-editable' : ''; ?>"
+                        <li<?php if (!$isHostingTheme): ?> class="<?php echo $isAdmin ? 'ie-menu-editable' : ''; ?>"
                             data-ie-menu-item="<?php echo (int)$child['id']; ?>"
                             data-ie-menu-title="<?php echo htmlspecialchars($child['title'], ENT_QUOTES, 'UTF-8'); ?>"
                             data-ie-menu-url="<?php echo htmlspecialchars($child['url'], ENT_QUOTES, 'UTF-8'); ?>"
@@ -103,13 +213,21 @@ if ($mainMenu) {
                             data-ie-menu-position="<?php echo (int)$child['position']; ?>"
                             data-ie-menu-parent="<?php echo (int)($child['parent_id'] ?? 0); ?>"
                             data-ie-menu-active="<?php echo (int)$child['active']; ?>"
-                            data-ie-menu-showicon="<?php echo (int)($cp['icon'] ?? 1); ?>"
-                            >
-                            <a class="dropdown-item" href="<?php echo BASE_URL . ltrim($child['url'], '/'); ?>">
-                                <?php if ($ci): ?><i class="<?php echo $ci; ?> me-2"></i><?php endif; ?>
-                                <?php echo htmlspecialchars($child['title']); ?>
+                            data-ie-menu-showicon="<?php echo (int)$childShowIcon; ?>"<?php endif; ?>>
+                            <a class="dropdown-item<?php echo $isHostingTheme && $childDescription !== '' ? ' hosting-nav-dropdown__item' : ''; ?>"
+                               href="<?php echo htmlspecialchars($childUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                               <?php echo !empty($child['external']) ? 'target="_blank" rel="noopener noreferrer"' : ''; ?>>
+                                <?php if (!$isHostingTheme && $childIcon): ?><i class="<?php echo $childIcon; ?> me-2" aria-hidden="true"></i><?php endif; ?>
+                                <?php if ($isHostingTheme && $childDescription !== ''): ?>
+                                <span class="hosting-nav-dropdown__copy">
+                                    <strong><?php echo $childTitle; ?></strong>
+                                    <small><?php echo $childDescription; ?></small>
+                                </span>
+                                <?php else: ?>
+                                <?php echo $childTitle; ?>
+                                <?php endif; ?>
                             </a>
-                            <?php if ($isAdmin): ?>
+                            <?php if ($isAdmin && !$isHostingTheme): ?>
                             <div class="ie-menu-actions">
                                 <button type="button" class="ie-menu-btn" data-ie-menu-edit title="Modifier" aria-label="Modifier <?php echo htmlspecialchars($child['title']); ?>"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
                                 <button type="button" class="ie-menu-btn danger" data-ie-menu-delete title="Supprimer" aria-label="Supprimer <?php echo htmlspecialchars($child['title']); ?>"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button>
@@ -121,7 +239,7 @@ if ($mainMenu) {
                     <?php endif; ?>
                 </li>
                 <?php endforeach; ?>
-                <?php if ($isAdmin): ?>
+                <?php if ($isAdmin && !$isHostingTheme): ?>
                 <li class="nav-item nav-ie-menu-add">
                     <button type="button" class="ie-menu-add" data-ie-menu-add title="Ajouter un élément au menu" aria-label="Ajouter un élément au menu">
                         <i class="fa-solid fa-plus" aria-hidden="true"></i><span>Ajouter</span>
@@ -129,15 +247,32 @@ if ($mainMenu) {
                 </li>
                 <?php endif; ?>
             </ul>
-            <div class="navbar-right ms-lg-3">
+            <?php if ($isHostingTheme): ?>
+            <?php endif; ?>
+            <div class="navbar-right ms-lg-3<?php echo $isHostingTheme ? ' hosting-account-actions' : ''; ?>">
                 <?php if (isset($_SESSION['admin_id'])): ?>
+                <?php if ($isHostingTheme): ?>
+                <a class="hosting-account-link" href="<?php echo BASE_URL; ?>admin/dashboard.php">
+                    <span>Administration</span>
+                </a>
+                <?php else: ?>
                 <a class="nav-link" href="<?php echo BASE_URL; ?>admin/dashboard.php">
                     <i class="fas fa-cog me-1"></i>Administration
+                </a>
+                <?php endif; ?>
+                <?php else: ?>
+                <?php if ($isHostingTheme): ?>
+                <a class="hosting-account-link hosting-account-link--portal" href="https://cloud.baramidj.net/">
+                    <span>Espace client</span>
+                </a>
+                <a class="hosting-account-link" href="<?php echo BASE_URL; ?>login.php">
+                    <span>Connexion</span>
                 </a>
                 <?php else: ?>
                 <a class="nav-link welcome-login-link" href="<?php echo BASE_URL; ?>login.php">
                     <i class="fas fa-lock me-1"></i>Connexion
                 </a>
+                <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>

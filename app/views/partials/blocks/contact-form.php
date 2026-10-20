@@ -19,6 +19,13 @@ $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '';
                     </div>
                 <?php else: ?>
 
+                    <?php if (!empty($domainSearchRequest)): ?>
+                        <div class="alert alert-info">
+                            Vous demandez la vérification de disponibilité de <strong><?php echo htmlspecialchars($domainSearchRequest, ENT_QUOTES, 'UTF-8'); ?></strong>.
+                            Notre équipe confirmera le résultat après réception du formulaire.
+                        </div>
+                    <?php endif; ?>
+
                     <?php if (!empty($formError)): ?>
                         <div class="alert alert-danger"><?php echo htmlspecialchars($formError); ?></div>
                     <?php endif; ?>

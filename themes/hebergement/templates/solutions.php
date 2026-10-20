@@ -36,7 +36,7 @@ $hasCustomBody = $pageBody !== '' && !welcome_is_legacy_content($pageBody);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="<?php echo BASE_URL; ?>assets/css/style.css" rel="stylesheet">
-    <link href="<?php echo theme_url('assets/css/theme.css'); ?>" rel="stylesheet">
+    <link href="<?php echo theme_url('assets/css/theme.css'); ?>?v=<?php echo filemtime(dirname(__DIR__) . '/assets/css/theme.css') . '-' . filesize(dirname(__DIR__) . '/assets/css/theme.css'); ?>" rel="stylesheet">
     <?php if ($isAdmin): ?>
     <link href="<?php echo BASE_URL; ?>assets/css/inline-edit.css" rel="stylesheet">
     <?php endif; ?>
@@ -76,36 +76,117 @@ $hasCustomBody = $pageBody !== '' && !welcome_is_legacy_content($pageBody);
                     <p>Commencez avec l’essentiel, puis ajoutez les services utiles à votre activité.</p>
                 </div>
                 <div class="hosting-service-grid">
-                    <article class="hosting-service-card">
+                    <article id="hebergement-web" class="hosting-service-card">
                         <span class="hosting-service-card__icon"><i class="fa-solid fa-server" aria-hidden="true"></i></span>
                         <h3>Hébergement web</h3>
                         <p>Publiez votre site vitrine, votre blog ou votre site professionnel.</p>
                     </article>
-                    <article class="hosting-service-card">
+                    <article id="wordpress" class="hosting-service-card">
                         <span class="hosting-service-card__icon"><i class="fa-brands fa-wordpress" aria-hidden="true"></i></span>
                         <h3>Hébergement WordPress</h3>
                         <p>Une offre pensée pour créer et gérer facilement un site WordPress.</p>
                     </article>
-                    <article class="hosting-service-card">
+                    <article id="vps" class="hosting-service-card">
                         <span class="hosting-service-card__icon"><i class="fa-solid fa-microchip" aria-hidden="true"></i></span>
                         <h3>Serveurs VPS</h3>
                         <p>Des ressources évolutives pour vos applications et projets spécifiques.</p>
                     </article>
-                    <article class="hosting-service-card">
+                    <article id="domaines" class="hosting-service-card">
                         <span class="hosting-service-card__icon"><i class="fa-solid fa-globe" aria-hidden="true"></i></span>
                         <h3>Noms de domaine</h3>
                         <p>Réservez votre adresse web et associez-la à votre hébergement.</p>
                     </article>
-                    <article class="hosting-service-card">
+                    <article id="email" class="hosting-service-card">
                         <span class="hosting-service-card__icon"><i class="fa-solid fa-envelope" aria-hidden="true"></i></span>
                         <h3>E-mail professionnel</h3>
                         <p>Utilisez des adresses e-mail personnalisées avec votre domaine.</p>
+                    </article>
+                    <article id="revendeur" class="hosting-service-card hosting-service-card--dark">
+                        <span class="hosting-service-card__icon"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i></span>
+                        <h3>Offre revendeur</h3>
+                        <p>Proposez des services d’hébergement à vos propres clients.</p>
+                    </article>
+                    <article id="creation-site" class="hosting-service-card">
+                        <span class="hosting-service-card__icon"><i class="fa-solid fa-laptop-code" aria-hidden="true"></i></span>
+                        <h3>Création de site web</h3>
+                        <p>Présentez votre entreprise avec un site conçu autour de votre activité.</p>
+                    </article>
+                    <article id="securite" class="hosting-service-card">
+                        <span class="hosting-service-card__icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></span>
+                        <h3>Sécurité & certificat SSL</h3>
+                        <p>Protégez les échanges et renforcez la confiance des visiteurs de votre site.</p>
                     </article>
                     <article class="hosting-service-card hosting-service-card--dark">
                         <span class="hosting-service-card__icon"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i></span>
                         <h3>Migration & accompagnement</h3>
                         <p>Préparez le transfert de votre site et obtenez de l’aide pour démarrer.</p>
                     </article>
+                </div>
+                <div class="domain-tools hosting-server-options">
+                    <div class="domain-tools__heading">
+                        <span class="hosting-kicker">Serveurs & VPS</span>
+                        <h3>Des ressources adaptées à vos projets</h3>
+                    </div>
+                    <div class="domain-tools__grid">
+                        <article id="hebergement-mutualise" class="domain-tool-card">
+                            <h4>Hébergement Web Mutualisé</h4>
+                            <p>Hébergez votre site web avec des services e-mail, contacts et agendas associés.</p>
+                            <a href="<?php echo BASE_URL; ?>contact">Demander des informations <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        </article>
+                        <article id="hebergement-algerie" class="domain-tool-card">
+                            <h4>Hébergement localisé en Algérie</h4>
+                            <p>Hébergez votre site web sur des serveurs installés physiquement en Algérie.</p>
+                            <a href="<?php echo BASE_URL; ?>contact">Demander des informations <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        </article>
+                        <article id="serveur-vps" class="domain-tool-card">
+                            <h4>Serveur dédié VPS</h4>
+                            <p>Un serveur Virtuel Privé pour disposer d’un environnement adapté à vos applications et projets.</p>
+                            <a href="<?php echo BASE_URL; ?>contact">Demander des informations <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        </article>
+                        <article id="serveur-dedie" class="domain-tool-card">
+                            <h4>Serveur dédié Virtuel PRO</h4>
+                            <p>Puissance et flexibilité, avec licence WHM/cPanel incluse dans l’offre.</p>
+                            <a href="<?php echo BASE_URL; ?>contact">Demander des informations <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        </article>
+                        <article id="serveur-vps-algerie" class="domain-tool-card">
+                            <h4>Serveurs VPS localisés en Algérie</h4>
+                            <p>Des serveurs VPS installés en Algérie pour vos besoins d’hébergement local.</p>
+                            <a href="<?php echo BASE_URL; ?>contact">Demander des informations <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        </article>
+                    </div>
+                </div>
+                <div class="domain-tools">
+                    <div class="domain-tools__heading">
+                        <span class="hosting-kicker">Services de domaine</span>
+                        <h3>Tout pour trouver et gérer votre domaine</h3>
+                    </div>
+                    <div class="domain-tools__grid">
+                        <article id="domain-bulk-search" class="domain-tool-card">
+                            <h4>Recherche de domaines par lot</h4>
+                            <p>Envoyez plusieurs noms ou extensions à vérifier dans une seule demande.</p>
+                            <a href="<?php echo BASE_URL; ?>contact">Faire une demande groupée <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        </article>
+                        <article id="domain-transfer" class="domain-tool-card">
+                            <h4>Transfert de domaines</h4>
+                            <p>Demandez le transfert de votre domaine et les informations utiles au renouvellement.</p>
+                            <a href="<?php echo BASE_URL; ?>contact">Demander un transfert <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        </article>
+                        <article id="domain-pricing" class="domain-tool-card">
+                            <h4>Tarifs et liste des noms de domaine</h4>
+                            <p>Contactez-nous pour connaître les tarifs et extensions actuellement disponibles.</p>
+                            <a href="<?php echo BASE_URL; ?>contact">Demander les tarifs <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        </article>
+                        <article class="domain-tool-card">
+                            <h4>Whois check</h4>
+                            <p>Consultez les informations publiques associées à un nom de domaine.</p>
+                            <a href="https://whois.octenium.com/" target="_blank" rel="noopener noreferrer">Ouvrir le Whois <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
+                        </article>
+                        <article id="domain-management" class="domain-tool-card">
+                            <h4>Gestion de domaine</h4>
+                            <p>Accompagnement pour le DNS, les serveurs de noms et les enregistrements A, CNAME, SPF, DKIM et AAAA.</p>
+                            <a href="<?php echo BASE_URL; ?>contact">Parler à un conseiller <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        </article>
+                    </div>
                 </div>
             </div>
         </section>

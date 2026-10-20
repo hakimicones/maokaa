@@ -334,6 +334,23 @@ function render_block_contact_form(PDO $pdo, string $blockTitle = ''): string
     $formSent  = false;
     $formError = '';
     $formData  = [];
+    $domainSearchRequest = '';
+
+    if (isset($_GET['domain'])) {
+        $requestedDomain = is_string($_GET['domain'])
+            ? strtolower(trim($_GET['domain']))
+            : '';
+        $domainPattern = '/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/D';
+        if (preg_match($domainPattern, $requestedDomain)) {
+            $domainSearchRequest = $requestedDomain;
+            $formData = [
+                'sujet' => 'Vérification de disponibilité — ' . $requestedDomain,
+                'message' => 'Bonjour, je souhaite vérifier la disponibilité du nom de domaine ' . $requestedDomain . '.',
+            ];
+        } else {
+            $formError = 'Le nom de domaine saisi semble invalide. Vérifiez son format, par exemple exemple.dz.';
+        }
+    }
 
     if (($_POST['vep_contact_form'] ?? '') === '1') {
         if (!function_exists('verifyCSRFToken') || !verifyCSRFToken($_POST['csrf_token'] ?? '')) {
