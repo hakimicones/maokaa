@@ -111,7 +111,7 @@ $formatDomainPrice = static function (int $price): string {
                     <span class="hosting-eyebrow"><span class="hosting-eyebrow__dot"></span> Votre identité sur le web</span>
                     <h1 id="domain-hero-title">Trouvez le domaine qui vous représente</h1>
                     <p>Choisissez une adresse facile à retenir et donnez à votre projet une présence professionnelle en ligne.</p>
-                    <form class="domain-search-form" action="<?php echo BASE_URL; ?>contact" method="get">
+                    <form class="domain-search-form" method="post" novalidate>
                         <label for="hosting-domain-query">Rechercher un nom de domaine</label>
                         <div class="domain-search-form__field">
                             <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
@@ -127,7 +127,8 @@ $formatDomainPrice = static function (int $price): string {
                             >
                             <button type="submit">Rechercher <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
                         </div>
-                        <small>La disponibilité sera confirmée par notre équipe après l’envoi de votre demande.</small>
+                        <small>La disponibilité affichée est indicative et doit être confirmée avant l’achat.</small>
+                        <div id="domain-search-result" class="domain-search-result" aria-live="polite"></div>
                     </form>
                 </div>
                 <div class="domain-hero__visual" aria-hidden="true">
@@ -246,7 +247,58 @@ $formatDomainPrice = static function (int $price): string {
             const cards = Array.from(document.querySelectorAll('.domain-extension-card'));
             const filters = Array.from(document.querySelectorAll('[data-domain-filter]'));
             const emptyState = document.getElementById('domain-extension-empty');
+            const domainForm = document.querySelector('.domain-search-form');
+            const domainInput = document.getElementById('hosting-domain-query');
+            const resultBox = document.getElementById('domain-search-result');
             let activeFilter = 'all';
+
+            const renderResult = (payload) => {
+                if (!resultBox) return;
+
+                if (!payload || !payload.success) {
+                    resultBox.className = 'domain-search-result is-error';
+                    resultBox.replaceChildren();
+                    const errorLabel = document.createElement('strong');
+                    errorLabel.textContent = 'Erreur : ';
+                    resultBox.append(errorLabel, document.createTextNode(payload && payload.error ? payload.error : 'Impossible de vérifier le domaine.'));
+                    return;
+                }
+
+                const data = payload.data || {};
+                const status = (data.status || '').toLowerCase();
+                const domain = data.domain || domainInput.value.trim();
+                const stateLabel = status === 'available' ? 'Disponible' : status === 'active' ? 'Déjà enregistré' : 'Statut inconnu';
+                const stateClass = status === 'available' ? 'is-success' : status === 'active' ? 'is-danger' : 'is-neutral';
+
+                resultBox.className = 'domain-search-result ' + stateClass;
+                resultBox.replaceChildren();
+
+                const header = document.createElement('div');
+                header.className = 'domain-search-result__header';
+                const domainLabel = document.createElement('strong');
+                domainLabel.textContent = domain;
+                const statusLabel = document.createElement('span');
+                statusLabel.textContent = stateLabel;
+                header.append(domainLabel, statusLabel);
+                resultBox.appendChild(header);
+
+                const details = document.createElement('div');
+                details.className = 'domain-search-result__details';
+                const addDetail = (label, value) => {
+                    if (!value) return;
+                    const row = document.createElement('div');
+                    const rowLabel = document.createElement('strong');
+                    rowLabel.textContent = label + ' :';
+                    row.append(rowLabel, document.createTextNode(' ' + value));
+                    details.appendChild(row);
+                };
+
+                addDetail('Registrar', data.registrar);
+                addDetail('Création', data.creation_date);
+                addDetail('Expiration', data.expiration_date);
+                addDetail('Serveurs DNS', Array.isArray(data.nameservers) ? data.nameservers.join(', ') : '');
+                resultBox.appendChild(details);
+            };
 
             const updateCatalog = () => {
                 const query = search.value.trim().toLowerCase();
@@ -260,8 +312,35 @@ $formatDomainPrice = static function (int $price): string {
                     if (isVisible) visibleCount += 1;
                 });
 
-                emptyState.hidden = visibleCount > 0;
+                if (emptyState) emptyState.hidden = visibleCount > 0;
             };
+
+            if (domainForm && domainInput) {
+                domainForm.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    const domain = domainInput.value.trim();
+                    if (!domain) {
+                        renderResult({ success: false, error: 'Veuillez saisir un nom de domaine.' });
+                        return;
+                    }
+
+                    resultBox.className = 'domain-search-result is-loading';
+                    resultBox.innerHTML = '<span>Recherche du domaine en cours…</span>';
+
+                    try {
+                        const response = await fetch('<?php echo BASE_URL; ?>includes/domain_search.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                            body: new URLSearchParams({ domain })
+                        });
+
+                        const payload = await response.json();
+                        renderResult(payload);
+                    } catch (error) {
+                        renderResult({ success: false, error: 'Erreur réseau lors de la recherche.' });
+                    }
+                });
+            }
 
             filters.forEach((button) => {
                 button.addEventListener('click', () => {
@@ -275,7 +354,7 @@ $formatDomainPrice = static function (int $price): string {
                 });
             });
 
-            search.addEventListener('input', updateCatalog);
+            if (search) search.addEventListener('input', updateCatalog);
         })();
     </script>
     <?php if ($isAdmin): ?>
